@@ -1,0 +1,21 @@
+function paras = optim_paras(init_x, init_y, init_theta)
+    paras.Freespace_X = 8.0;
+    paras.Freespace_Y = 8.0;
+    paras.Parking_X = 2.5;
+    paras.Parking_Y = 5.5;
+    paras.Car_Length = 4.0;
+    paras.Car_Width = 1.9;
+    paras.Car_L = 2.8;   %轴距取为2.8 m
+    paras.tf = 180;
+    paras.init = [init_x, init_y, init_theta, 0.0, 0.0];
+    paras.end = [0.0, 1.5, pi / 2, 0.0, 0.0];
+    paras.limits(1, :) = [-(paras.Parking_X / 2 + paras.Freespace_X), paras.Parking_X / 2 + paras.Freespace_X];
+    paras.limits(2, :) = [0.0, (paras.Parking_Y + paras.Freespace_Y)];
+    paras.limits(3, :) = [-2 * pi, 2 * pi];
+    paras.limits(4, :) = [-0.8, 0.8];
+    paras.limits(5, :) = [-2/3.6, 2/3.6];
+    paras.controls(1, :) = [-0.1, 0.1];
+    paras.controls(2, :) = [-4.9, 4.9];
+    paras.paths(1, :) = [0.1, 1e10];
+    paras.paths(2, :) = [-0.2, 0.2];
+end
