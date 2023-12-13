@@ -4,6 +4,7 @@ import matlab.engine as engine
 import numpy as np
 import time
 import random
+import psutil
 import sys
 import matplotlib.pyplot as plt
 
@@ -15,10 +16,9 @@ from modules.util_sample_tries import SampleTries
 if __name__ == '__main__':
     # 程序运行中不显示报错
     os.environ["TF_CPP_MIN_LOG_LEVEL"] = '3'
-    x_list = np.arange(-8.5, -3.0, 0.2)
-    y_list = np.arange(7.5, 11.5, 0.2)
-    theta_list = np.arange(-math.pi / 3, math.pi / 3 * 1.01, 0.2)
-    # theta_list = np.array([0.0])
+    x_list = np.linspace(start=-8.5, stop=-1.5, num=28)
+    y_list = np.linspace(start=7.0, stop=12.0, num=20)
+    theta_list = np.linspace(start=-math.pi / 3, stop=math.pi / 3, num=11)
     anchors_list = np.zeros([1, num_anchor_state * num_anchors_all])
     anchors_failed_list = np.zeros([1, num_anchor_state])
 
@@ -36,8 +36,8 @@ if __name__ == '__main__':
                 # 设置初始化数据
                 init_data = []
                 for sample in range(samples):
-                    init_data.append([x + random.uniform(-1, 1) * 0.1, y + random.uniform(-1, 1) * 0.1,
-                                      theta + random.uniform(-1, 1) * 0.1])
+                    init_data.append([x + random.uniform(-1, 1) * 0.01, y + random.uniform(-1, 1) * 0.01,
+                                      theta + random.uniform(-1, 1) * 0.01])
 
                 # 创教多线程
                 sample_tries = SampleTries(init_data)
@@ -55,7 +55,8 @@ if __name__ == '__main__':
                     result.write(f"\nNow: {time.asctime(time.localtime())}")
                     result.write(f"\nProcess:[{process}{process_all}] {schedule * 100:.2f}%")
                     result.write(f"\nInit_Data: [{x:.2f}, {y:.2f}, {theta:.2f}], Samples: {samples}")
-                    result.write(f"\n\t{sample_tries.Title} {(time.time() - time_s):.2f}s")
+                    result.write(f"\nDuration: {(time.time() - time_s):.2f}s, CPU: {psutil.cpu_percent()}%")
+                    result.write(f"\n\t{sample_tries.Title}")
                     result.write(f"\n\tState:[{sample_tries.State}]")
                     result.write(f"\n-------------------------------------------------")
                     result.close()
@@ -70,7 +71,7 @@ if __name__ == '__main__':
                         result = open(path_result, 'w')
                         result.write(f"\nNow: {time.asctime(time.localtime())}")
                         result.write(f"\nProcess:[{process}{process_all}] {schedule * 100:.2f}%")
-                        result.write(f"\nInit_Data: [{x:.2f}, {y:.2f}, {theta:.2f}], Samples: {samples}")
+                        result.write(f"\nInit_Data: [{x:.4f}, {y:.4f}, {theta:.4f}], Samples: {samples}")
                         result.write(f"\n\t{sample_tries.Title} {(time.time() - time_s):.2f}s")
                         result.write(f"\n\tState:[{sample_tries.State}]")
                         result.write(f"\n-------------------------------------------------")
@@ -93,7 +94,7 @@ if __name__ == '__main__':
                 log = open(path_log, 'a+')
                 log.write(f"\n-------------------------------------------------")
                 log.write(f"\n{time.asctime(time.localtime())}")
-                log.write(f"\nInit_Data: [{x:.2f}, {y:.2f}, {theta:.2f}], Samples: {samples}")
+                log.write(f"\nInit_Data: [{x:.4f}, {y:.4f}, {theta:.4f}], Samples: {samples}")
                 log.write(f"\nResult:")
                 log.write(f"\n\tSuccessOrNot: [{sample_tries.SuccessOrNot}]")
                 log.write(f"\n\tInitOrNot: [{sample_tries.InitOrNot}]")

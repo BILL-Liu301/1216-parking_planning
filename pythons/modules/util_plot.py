@@ -90,7 +90,7 @@ def plot_trajectories(tra_pre, anchors):
     plt.clf()
 
     plot_base()
-    txt = os.path.join(path_solutions, f"{anchors[0, 0]:.2f}_{anchors[1, 0]:.2f}_{anchors[2, 0]:.2f}.txt")
+    txt = os.path.join(path_solutions, f"{anchors[0, 0]:.4f}_{anchors[1, 0]:.4f}_{anchors[2, 0]:.4f}.txt")
     if os.path.exists(txt):
         xy = np.loadtxt(txt)
         plt.plot(xy[:, 2], xy[:, 3], "k--")

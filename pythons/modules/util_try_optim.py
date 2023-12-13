@@ -63,7 +63,7 @@ class TryOptim(Thread):
             self.flag_success = True
             self.anchors = self.result['parking_anchors']
             solution = np.asarray(self.result['solution'])
-            np.savetxt(os.path.join(path_solutions, f"{self.init_data[0]:.2f}_{self.init_data[1]:.2f}_{self.init_data[2]:.2f}.txt"), solution)
+            np.savetxt(os.path.join(path_solutions, f"{self.init_data[0]:.4f}_{self.init_data[1]:.4f}_{self.init_data[2]:.4f}.txt"), solution)
 
         finally:
             self.co.quit()

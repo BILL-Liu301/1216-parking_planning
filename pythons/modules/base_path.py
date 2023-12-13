@@ -1,4 +1,4 @@
-path_base = "D:/WorkingPlaces/outputs/parking_planning"
+path_base = "D:/WorkingPlaces/outputs/parking_planning/"
 
 path_dataset = path_base + "datasets/"
 path_dataset_pkl = path_dataset + "dataset_all.pkl"
