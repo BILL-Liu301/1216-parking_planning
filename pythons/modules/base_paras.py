@@ -1,14 +1,14 @@
 import math
 import numpy as np
 
-samples = 4
+samples = 5
 
 num_step = 4
 num_anchors_all = 2 * num_step + 1
 num_anchors_pre = 2 * num_step
 num_anchors_per_step = 3
 num_anchor_state = 3
-planning_time_ref = 3 * 60
+planning_time_ref = 1.0 * 60
 
 
 paras = {

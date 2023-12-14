@@ -1,0 +1,195 @@
+ _______________________________________________________________________________________________________
+|                                                                                                       |
+| GPOPS Version 5.1 Running with the hp-Adaptive Radau Pseudospectral Method and SNOPT 7.1              |
+|_______________________________________________________________________________________________________|
+|                                                                                                       |
+| GPOPS Copyright (c) 2008-2011 Anil V. Rao and David Benson.                                           |
+|_______________________________________________________________________________________________________|
+|                                                                                                       |
+| SNOPT (c) Copyright Regents of the University of California and Stanford University.                  |
+|_______________________________________________________________________________________________________|
+|                                                                                                       |
+| Downloading, using, copying, or modifying the GPOPS code constitutes an agreement to ALL of the terms |
+| of the GPOPS license. Please see the LICENSE page on the GPOPS website at http://www.gpops.org.       |
+|_______________________________________________________________________________________________________|
+                                                                                                        
+
+ __________________________________________
+|                                          |
+|>>>>>>>>> Information in Phase 1 <<<<<<<<<|
+|__________________________________________|
+
+State 	1
+	 Start of Phase:    	-8.4983 <= State 1 <= -8.4983
+	 During Phase:      	-17.25 <= State 1 <= 17.25
+	 Terminus of Phase: 	1.25 <= State 1 <= 17.25
+State 	2
+	 Start of Phase:    	9.4939 <= State 2 <= 9.4939
+	 During Phase:      	5.5 <= State 2 <= 13.5
+	 Terminus of Phase: 	5.5 <= State 2 <= 13.5
+State 	3
+	 Start of Phase:    	-1.0381 <= State 3 <= -1.0381
+	 During Phase:      	-1.5708 <= State 3 <= 1.5708
+	 Terminus of Phase: 	-1.5708 <= State 3 <= 1.5708
+State 	4
+	 Start of Phase:    	0 <= State 4 <= 0
+	 During Phase:      	-0.8 <= State 4 <= 0.8
+	 Terminus of Phase: 	-0.8 <= State 4 <= 0.8
+State 	5
+	 Start of Phase:    	0 <= State 5 <= 0
+	 During Phase:      	0 <= State 5 <= 1.3889
+	 Terminus of Phase: 	0 <= State 5 <= 0
+
+Control 	1
+	 During Phase:    	-0.4 <= Control 1 <= 0.4
+Control 	2
+	 During Phase:    	-4 <= Control 2 <= 4
+
+No Parameters in Phase 1
+
+Path Constraint 	1
+	 During Phase:    	0.05 <= Path 1 <= 10000000000
+Path Constraint 	2
+	 During Phase:    	0.05 <= Path 2 <= 10000000000
+Path Constraint 	3
+	 During Phase:    	-0.4 <= Path 3 <= 0.4
+
+No Event Constraints in Phase 1
+
+Phase Duration: 0 <= duration <= 240
+
+
+ __________________________________________
+|                                          |
+|>>>>>>>>> Information in Phase 2 <<<<<<<<<|
+|__________________________________________|
+
+State 	1
+	 Start of Phase:    	1.25 <= State 1 <= 17.25
+	 During Phase:      	-17.25 <= State 1 <= 17.25
+	 Terminus of Phase: 	-17.25 <= State 1 <= -1.25
+State 	2
+	 Start of Phase:    	5.5 <= State 2 <= 13.5
+	 During Phase:      	5.5 <= State 2 <= 13.5
+	 Terminus of Phase: 	5.5 <= State 2 <= 9.5
+State 	3
+	 Start of Phase:    	-1.5708 <= State 3 <= 1.5708
+	 During Phase:      	-1.5708 <= State 3 <= 1.5708
+	 Terminus of Phase: 	-1.5708 <= State 3 <= 1.5708
+State 	4
+	 Start of Phase:    	-0.8 <= State 4 <= 0.8
+	 During Phase:      	-0.8 <= State 4 <= 0.8
+	 Terminus of Phase: 	-0.8 <= State 4 <= 0.8
+State 	5
+	 Start of Phase:    	0 <= State 5 <= 0
+	 During Phase:      	-1.3889 <= State 5 <= 0
+	 Terminus of Phase: 	0 <= State 5 <= 0
+
+Control 	1
+	 During Phase:    	-0.4 <= Control 1 <= 0.4
+Control 	2
+	 During Phase:    	-4 <= Control 2 <= 4
+
+No Parameters in Phase 2
+
+Path Constraint 	1
+	 During Phase:    	0.05 <= Path 1 <= 10000000000
+Path Constraint 	2
+	 During Phase:    	0.05 <= Path 2 <= 10000000000
+Path Constraint 	3
+	 During Phase:    	-0.4 <= Path 3 <= 0.4
+
+No Event Constraints in Phase 2
+
+Phase Duration: 0 <= duration <= 240
+
+
+ __________________________________________
+|                                          |
+|>>>>>>>>> Information in Phase 3 <<<<<<<<<|
+|__________________________________________|
+
+State 	1
+	 Start of Phase:    	-17.25 <= State 1 <= -1.25
+	 During Phase:      	-17.25 <= State 1 <= 17.25
+	 Terminus of Phase: 	1.25 <= State 1 <= 17.25
+State 	2
+	 Start of Phase:    	5.5 <= State 2 <= 9.5
+	 During Phase:      	5.5 <= State 2 <= 13.5
+	 Terminus of Phase: 	9.5 <= State 2 <= 13.5
+State 	3
+	 Start of Phase:    	-1.5708 <= State 3 <= 1.5708
+	 During Phase:      	-1.5708 <= State 3 <= 1.5708
+	 Terminus of Phase: 	-1.5708 <= State 3 <= 1.5708
+State 	4
+	 Start of Phase:    	-0.8 <= State 4 <= 0.8
+	 During Phase:      	-0.8 <= State 4 <= 0.8
+	 Terminus of Phase: 	-0.8 <= State 4 <= 0.8
+State 	5
+	 Start of Phase:    	0 <= State 5 <= 0
+	 During Phase:      	0 <= State 5 <= 1.3889
+	 Terminus of Phase: 	0 <= State 5 <= 0
+
+Control 	1
+	 During Phase:    	-0.4 <= Control 1 <= 0.4
+Control 	2
+	 During Phase:    	-4 <= Control 2 <= 4
+
+No Parameters in Phase 3
+
+Path Constraint 	1
+	 During Phase:    	0.05 <= Path 1 <= 10000000000
+Path Constraint 	2
+	 During Phase:    	0.05 <= Path 2 <= 10000000000
+Path Constraint 	3
+	 During Phase:    	-0.4 <= Path 3 <= 0.4
+
+No Event Constraints in Phase 3
+
+Phase Duration: 0 <= duration <= 240
+
+
+ __________________________________________
+|                                          |
+|>>>>>>>>> Information in Phase 4 <<<<<<<<<|
+|__________________________________________|
+
+State 	1
+	 Start of Phase:    	1.25 <= State 1 <= 17.25
+	 During Phase:      	-17.25 <= State 1 <= 17.25
+	 Terminus of Phase: 	0 <= State 1 <= 0
+State 	2
+	 Start of Phase:    	9.5 <= State 2 <= 13.5
+	 During Phase:      	0 <= State 2 <= 13.5
+	 Terminus of Phase: 	1.5 <= State 2 <= 1.5
+State 	3
+	 Start of Phase:    	-1.5708 <= State 3 <= 1.5708
+	 During Phase:      	-1.5708 <= State 3 <= 1.5708
+	 Terminus of Phase: 	1.5708 <= State 3 <= 1.5708
+State 	4
+	 Start of Phase:    	-0.8 <= State 4 <= 0.8
+	 During Phase:      	-0.8 <= State 4 <= 0.8
+	 Terminus of Phase: 	0 <= State 4 <= 0
+State 	5
+	 Start of Phase:    	0 <= State 5 <= 0
+	 During Phase:      	-1.3889 <= State 5 <= 0
+	 Terminus of Phase: 	0 <= State 5 <= 0
+
+Control 	1
+	 During Phase:    	-0.4 <= Control 1 <= 0.4
+Control 	2
+	 During Phase:    	-4 <= Control 2 <= 4
+
+No Parameters in Phase 4
+
+Path Constraint 	1
+	 During Phase:    	0.05 <= Path 1 <= 10000000000
+Path Constraint 	2
+	 During Phase:    	0.05 <= Path 2 <= 10000000000
+Path Constraint 	3
+	 During Phase:    	-0.4 <= Path 3 <= 0.4
+
+No Event Constraints in Phase 4
+
+Phase Duration: 0 <= duration <= 240
+
