@@ -1,7 +1,7 @@
 import math
 import numpy as np
 
-samples = 5
+samples = 3
 
 num_step = 4
 num_anchors_all = 2 * num_step + 1
