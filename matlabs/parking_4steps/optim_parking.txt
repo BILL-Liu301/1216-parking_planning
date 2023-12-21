@@ -20,15 +20,15 @@
 |__________________________________________|
 
 State 	1
-	 Start of Phase:    	-8.4983 <= State 1 <= -8.4983
+	 Start of Phase:    	-4.9953 <= State 1 <= -4.9953
 	 During Phase:      	-17.25 <= State 1 <= 17.25
 	 Terminus of Phase: 	1.25 <= State 1 <= 17.25
 State 	2
-	 Start of Phase:    	9.4939 <= State 2 <= 9.4939
+	 Start of Phase:    	11.9921 <= State 2 <= 11.9921
 	 During Phase:      	5.5 <= State 2 <= 13.5
 	 Terminus of Phase: 	5.5 <= State 2 <= 13.5
 State 	3
-	 Start of Phase:    	-1.0381 <= State 3 <= -1.0381
+	 Start of Phase:    	0.16541 <= State 3 <= 0.16541
 	 During Phase:      	-1.5708 <= State 3 <= 1.5708
 	 Terminus of Phase: 	-1.5708 <= State 3 <= 1.5708
 State 	4
