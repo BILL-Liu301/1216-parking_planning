@@ -1,16 +1,12 @@
 import math
 import os
-import matlab.engine as engine
 import numpy as np
 import time
 import random
 import psutil
-import sys
-import matplotlib.pyplot as plt
 
-from modules.base_path import path_log, path_solutions, path_anchors, path_result, path_anchors_failed
-from modules.base_paras import num_anchor_state, num_anchors_all, samples
-from modules.util_try_optim import TryOptim
+from modules.base_path import path_log, path_result, path_anchors_failed
+from modules.base_paras import num_anchor_state, num_samples
 from modules.util_sample_tries import SampleTries
 
 if __name__ == '__main__':
@@ -19,7 +15,6 @@ if __name__ == '__main__':
     x_list = np.linspace(start=-8.5, stop=-1.5, num=29)
     y_list = np.linspace(start=7.0, stop=12.0, num=21)
     theta_list = np.linspace(start=-math.pi / 3, stop=math.pi / 3, num=13)
-    anchors_list = np.zeros([1, num_anchor_state * num_anchors_all])
     anchors_failed_list = np.zeros([1, num_anchor_state])
 
     log = open(path_log, 'w')
@@ -35,7 +30,7 @@ if __name__ == '__main__':
 
                 # 设置初始化数据
                 init_data = []
-                for sample in range(samples):
+                for sample in range(num_samples):
                     init_data.append([x + random.uniform(-1, 1) * 0.01, y + random.uniform(-1, 1) * 0.01,
                                       theta + random.uniform(-1, 1) * 0.01])
 
@@ -54,7 +49,7 @@ if __name__ == '__main__':
                     result = open(path_result, 'w')
                     result.write(f"\nNow: {time.asctime(time.localtime())}")
                     result.write(f"\nProcess:[{process}{process_all}] {schedule * 100:.2f}%")
-                    result.write(f"\nInit_Data: [{x:.2f}, {y:.2f}, {theta:.2f}], Samples: {samples}")
+                    result.write(f"\nInit_Data: [{x:.2f}, {y:.2f}, {theta:.2f}], Samples: {num_samples}")
                     result.write(f"\nDuration: {(time.time() - time_s):.2f}s, CPU: {psutil.cpu_percent()}%")
                     result.write(f"\n\t{sample_tries.Title}")
                     result.write(f"\n\tState:[{sample_tries.State}]")
@@ -71,7 +66,7 @@ if __name__ == '__main__':
                         result = open(path_result, 'w')
                         result.write(f"\nNow: {time.asctime(time.localtime())}")
                         result.write(f"\nProcess:[{process}{process_all}] {schedule * 100:.2f}%")
-                        result.write(f"\nInit_Data: [{x:.4f}, {y:.4f}, {theta:.4f}], Samples: {samples}")
+                        result.write(f"\nInit_Data: [{x:.4f}, {y:.4f}, {theta:.4f}], Samples: {num_samples}")
                         result.write(f"\n\t{sample_tries.Title} {(time.time() - time_s):.2f}s")
                         result.write(f"\n\tState:[{sample_tries.State}]")
                         result.write(f"\n-------------------------------------------------")
@@ -82,7 +77,7 @@ if __name__ == '__main__':
                 # 提取各线程结果
                 for try_optim in sample_tries.tries_optim:
                     if try_optim.flag_success:
-                        anchors_list = np.append(anchors_list, np.asarray(try_optim.anchors).reshape(1, -1), axis=0)
+                        pass
                     else:
                         if try_optim.flag_init_data:
                             anchors_failed_list = np.append(anchors_failed_list, np.asarray([try_optim.init_data]), axis=0)
@@ -94,7 +89,7 @@ if __name__ == '__main__':
                 log = open(path_log, 'a+')
                 log.write(f"\n-------------------------------------------------")
                 log.write(f"\n{time.asctime(time.localtime())}")
-                log.write(f"\nInit_Data: [{x:.4f}, {y:.4f}, {theta:.4f}], Samples: {samples}")
+                log.write(f"\nInit_Data: [{x:.4f}, {y:.4f}, {theta:.4f}], Samples: {num_samples}")
                 log.write(f"\nResult:")
                 log.write(f"\n\tSuccessOrNot: [{sample_tries.SuccessOrNot}]")
                 log.write(f"\n\tInitOrNot: [{sample_tries.InitOrNot}]")
@@ -104,10 +99,7 @@ if __name__ == '__main__':
                 log.write(f"\n\tRunningOrNot: [{sample_tries.RunningOrNot}]")
                 log.close()
 
-                np.savetxt(path_anchors, anchors_list)
                 np.savetxt(path_anchors_failed, anchors_failed_list)
 
-    anchors_list = anchors_list[1:, :]
     anchors_failed_list = anchors_failed_list[1:, :]
-    np.savetxt(path_anchors, anchors_list)
     np.savetxt(path_anchors_failed, anchors_failed_list)

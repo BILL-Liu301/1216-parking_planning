@@ -2,7 +2,7 @@ import os
 from threading import Thread
 import numpy as np
 
-from .base_paras import planning_time_ref, paras
+from .base_paras import num_planning_time_ref, paras
 from .util_exception import InitDataMeaningLess, MatlabTimeOut, MatlabResultFail
 from .util_call_optim import CallOptim
 from .util_wait_matlab import WaitMatlab
@@ -19,7 +19,7 @@ class TryOptim(Thread):
         self.flag_result = True
         self.flag_running = True
         self.flag_success = False
-        self.planning_time_ref = planning_time_ref
+        self.planning_time_ref = num_planning_time_ref
         self.planning_time = 0
         self.wm = WaitMatlab(self.planning_time_ref)
         self.co = CallOptim(init_data=init_data)
