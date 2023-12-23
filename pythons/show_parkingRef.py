@@ -1,15 +1,18 @@
-from modules.base_path import path_figs, path_solutions
-from modules.base_paras import paras
 import os
 import math
 import matplotlib.pyplot as plt
 import numpy as np
+from tqdm import tqdm
+
+from modules.base_path import path_solutions, path_figs_all
+from modules.base_paras import paras
 
 if __name__ == '__main__':
     solutions = os.listdir(path_solutions)
     solutions.sort(key=lambda x: int(x.split(".")[0]))
 
     plt.figure(figsize=[13.072, 7.353])
+    pbar = tqdm(total=len(solutions))
     for index, solution in enumerate(solutions):
         sol = np.loadtxt(os.path.join(path_solutions, solution))
 
@@ -84,9 +87,8 @@ if __name__ == '__main__':
         plt.plot(sol[:, 1], sol[:, 6], label="v")
         plt.legend(loc='upper right')
 
-        plt.show()
-        plt.savefig(f"{path_figs}/{solution[:-4]}.png")
+        plt.savefig(f"{path_figs_all}{solution[:-4]}.png")
         plt.clf()
 
-        schedule = "▋" * math.floor((index + 1) / len(solutions) * 10)
-        print(f"\rFigs: {schedule}, {(index + 1)}/{len(solutions)}", end='')
+        pbar.update(1)
+    pbar.close()

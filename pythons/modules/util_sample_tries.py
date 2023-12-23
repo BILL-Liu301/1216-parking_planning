@@ -1,4 +1,4 @@
-from .base_paras import samples
+from .base_paras import num_samples
 from .util_try_optim import TryOptim
 from .util_show_init import show_init
 
@@ -19,7 +19,7 @@ class SampleTries:
         self.RunningOrNot = " "
 
     def set_tries(self):
-        for sample in range(samples):
+        for sample in range(num_samples):
             self.tries_optim.append(TryOptim(self.init_data[sample]))
 
     def set_run(self):
