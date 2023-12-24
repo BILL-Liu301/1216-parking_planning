@@ -2,7 +2,9 @@ import math
 import numpy as np
 import torch
 import torch.nn as nn
+
 from .base_paras import paras
+from .base_settings import device
 
 
 class Criterion_Train(nn.Module):
@@ -19,20 +21,24 @@ class Criterion_Train(nn.Module):
         losses = []
         for index_inp, inp in enumerate(inps):
             ref = refs[index_inp]
-            inp_xy1 = inp[0:2, :]
-            ang = torch.cat((torch.cos(inp[2:3, :]), torch.sin(inp[2:3, :])), 0)
-            inp_xy2 = inp_xy1 + self.Car_Length * ang
-            inp_xy = torch.cat((inp_xy1, inp_xy2), 0)
+            losses_temp = torch.tensor(0.0).to(device)
+            for step in range(inp.shape[0]):
 
-            ref_xy1 = ref[0:2, :]
-            ang = torch.cat((torch.cos(ref[2:3, :]), torch.sin(ref[2:3, :])), 0)
-            ref_xy2 = ref_xy1 + self.Car_Length * ang
-            ref_xy = torch.cat((ref_xy1, ref_xy2), 0)
+                inp_xy1 = inp[step, 0:2, :]
+                ang = torch.cat((torch.cos(inp[step, 2:3, :]), torch.sin(inp[step, 2:3, :])), 0)
+                inp_xy2 = inp_xy1 + self.Car_Length * ang
+                inp_xy = torch.cat((inp_xy1, inp_xy2), 0)
 
-            delta = ref_xy - inp_xy
-            loss_xy1 = torch.sqrt(torch.sum(torch.pow(delta[0:2, :], 2), 0))
-            loss_xy2 = torch.sqrt(torch.sum(torch.pow(delta[2:4, :], 2), 0))
-            losses.append((loss_xy1 * self.weight + loss_xy2 * (1 - self.weight)).mean())
+                ref_xy1 = ref[step, 0:2, :]
+                ang = torch.cat((torch.cos(ref[step, 2:3, :]), torch.sin(ref[step, 2:3, :])), 0)
+                ref_xy2 = ref_xy1 + self.Car_Length * ang
+                ref_xy = torch.cat((ref_xy1, ref_xy2), 0)
+
+                delta = ref_xy - inp_xy
+                loss_xy1 = torch.sqrt(torch.sum(torch.pow(delta[0:2, :], 2), 0))
+                loss_xy2 = torch.sqrt(torch.sum(torch.pow(delta[2:4, :], 2), 0))
+                losses_temp = losses_temp + (loss_xy1 * self.weight + loss_xy2 * (1 - self.weight)).mean()
+            losses.append(losses_temp / inp.shape[0])
         for loss in losses:
             self.loss_xy += loss
         self.loss_xy = self.loss_xy / len(inps)

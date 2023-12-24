@@ -28,4 +28,3 @@ if flag:
     os.mkdir(path_figs_failed)
 else:
     print("已停止删除程序...")
-
