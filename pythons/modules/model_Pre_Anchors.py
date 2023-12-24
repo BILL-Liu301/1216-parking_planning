@@ -1,81 +1,58 @@
 import math
-
 import numpy as np
 import torch
 import torch.nn as nn
 
-
-class SelfAttention(nn.Module):
-    def __init__(self, input_size):
-        super(SelfAttention, self).__init__()
-        self.input_size = input_size
-        self.W_q = torch.normal(mean=0, std=2, size=(input_size, input_size), requires_grad=True).cuda()
-        self.W_k = torch.normal(mean=0, std=2, size=(input_size, input_size), requires_grad=True).cuda()
-        self.W_v = torch.normal(mean=0, std=2, size=(input_size, input_size), requires_grad=True).cuda()
-        self.softmax = nn.Softmax(dim=0)
-
-    def forward(self, inp):
-        Q = torch.matmul(self.W_q, inp)
-        K = torch.matmul(self.W_k, inp)
-        V = torch.matmul(self.W_v, inp)
-
-        A = torch.matmul(K.T, Q)
-        A = self.softmax(A)
-        oup = torch.matmul(V, A)
-        return oup, Q, K, V
+from .base_paras import num_step
 
 
 class Encoder(nn.Module):
-    def __init__(self, device, multi_head_size, seq_length,
+    def __init__(self, device, multi_head_size, seq_length_inp, seq_length_oup,
                  input_size, middle_size, output_size):
         super(Encoder, self).__init__()
         self.device = device
-        self.attention1 = SelfAttention(input_size).to(device)
-        self.attention2 = SelfAttention(input_size).to(device)
         self.multi_head_size = multi_head_size
-        self.norm = nn.LayerNorm(seq_length, eps=1e-6)
+        self.norm = nn.LayerNorm(seq_length_inp, eps=1e-6)
         self.softmax = nn.Softmax(dim=0)
+        self.bias = False
 
-        self.w_qkv_1 = [torch.normal(mean=0, std=2, size=(input_size, input_size), requires_grad=True).cuda(),
-                        torch.normal(mean=0, std=2, size=(input_size, input_size), requires_grad=True).cuda(),
-                        torch.normal(mean=0, std=2, size=(input_size, input_size), requires_grad=True).cuda()]
-        self.w_qkv_2 = [torch.normal(mean=0, std=2, size=(input_size, input_size), requires_grad=True).cuda(),
-                        torch.normal(mean=0, std=2, size=(input_size, input_size), requires_grad=True).cuda(),
-                        torch.normal(mean=0, std=2, size=(input_size, input_size), requires_grad=True).cuda()]
+        self.w_qkv_1 = nn.Parameter(torch.normal(mean=0, std=2, size=(3, input_size, input_size)))
+        self.w_qkv_2 = nn.Parameter(torch.normal(mean=0, std=2, size=(3, input_size, input_size)))
 
-        self.multi_head_layers_1, self.multi_head_layers_2 = [], []
+        self.multi_head_layers_1, self.multi_head_layers_2 = nn.ModuleList([]), nn.ModuleList([])
         for i in range(multi_head_size):
-            multi_head_layers_1_temp, multi_head_layers_2_temp = [], []
+            multi_head_layers_1_temp, multi_head_layers_2_temp = nn.ModuleList([]), nn.ModuleList([])
             for j in range(3):
-                multi_head_layers_1_temp.append(nn.Sequential(nn.ReLU(), nn.Linear(seq_length, middle_size).to(device),
-                                                              nn.ReLU(), nn.Linear(middle_size, middle_size).to(device),
-                                                              nn.ReLU(), nn.Linear(middle_size, middle_size).to(device),
-                                                              nn.ReLU(), nn.Linear(middle_size, seq_length).to(device)))
-                multi_head_layers_2_temp.append(nn.Sequential(nn.ReLU(), nn.Linear(seq_length, middle_size).to(device),
-                                                              nn.ReLU(), nn.Linear(middle_size, middle_size).to(device),
-                                                              nn.ReLU(), nn.Linear(middle_size, middle_size).to(device),
-                                                              nn.ReLU(), nn.Linear(middle_size, seq_length).to(device)))
+                multi_head_layers_1_temp.append(nn.Sequential(nn.ReLU(), nn.Linear(seq_length_inp, middle_size, bias=self.bias),
+                                                              nn.ReLU(), nn.Linear(middle_size, middle_size, bias=self.bias),
+                                                              nn.ReLU(), nn.Linear(middle_size, middle_size, bias=self.bias),
+                                                              nn.ReLU(), nn.Linear(middle_size, seq_length_inp, bias=self.bias)).to(device))
+                multi_head_layers_2_temp.append(nn.Sequential(nn.ReLU(), nn.Linear(seq_length_inp, middle_size, bias=self.bias),
+                                                              nn.ReLU(), nn.Linear(middle_size, middle_size, bias=self.bias),
+                                                              nn.ReLU(), nn.Linear(middle_size, middle_size, bias=self.bias),
+                                                              nn.ReLU(), nn.Linear(middle_size, seq_length_inp, bias=self.bias)).to(device))
             self.multi_head_layers_1.append(multi_head_layers_1_temp)
             self.multi_head_layers_2.append(multi_head_layers_2_temp)
 
-        self.concat_layers_1 = nn.Sequential(nn.ReLU(), nn.Linear(input_size * multi_head_size, middle_size),
-                                             nn.ReLU(), nn.Linear(middle_size, input_size))
-        self.concat_layers_2 = nn.Sequential(nn.ReLU(), nn.Linear(input_size * multi_head_size, middle_size),
-                                             nn.ReLU(), nn.Linear(middle_size, input_size))
+        self.concat_layers_1 = nn.Sequential(nn.ReLU(),
+                                             nn.Linear(input_size * multi_head_size, middle_size, bias=self.bias),
+                                             nn.ReLU(), nn.Linear(middle_size, input_size, bias=self.bias))
+        self.concat_layers_2 = nn.Sequential(nn.ReLU(),
+                                             nn.Linear(input_size * multi_head_size, middle_size, bias=self.bias),
+                                             nn.ReLU(), nn.Linear(middle_size, input_size, bias=self.bias))
 
-        self.linear_layers_1 = nn.Sequential(nn.ReLU(), nn.Linear(input_size, middle_size),
-                                             nn.ReLU(), nn.Linear(middle_size, middle_size),
-                                             nn.ReLU(), nn.Linear(middle_size, output_size))
+        self.linear_layers_1 = nn.Sequential(nn.ReLU(), nn.Linear(input_size, middle_size, bias=self.bias),
+                                             nn.ReLU(), nn.Linear(middle_size, middle_size, bias=self.bias),
+                                             nn.ReLU(), nn.Linear(middle_size, output_size, bias=self.bias))
 
-        self.linear_layers_2 = nn.Sequential(nn.ReLU(), nn.Linear(input_size, middle_size),
-                                             nn.ReLU(), nn.Linear(middle_size, middle_size),
-                                             nn.ReLU(), nn.Linear(middle_size, output_size))
+        self.linear_layers_2 = nn.Sequential(nn.ReLU(), nn.Linear(input_size, middle_size, bias=self.bias),
+                                             nn.ReLU(), nn.Linear(middle_size, middle_size, bias=self.bias),
+                                             nn.ReLU(), nn.Linear(middle_size, output_size, bias=self.bias))
 
     def dot_production_attention(self, scaled_qkv):
         scaled_attention = []
         for i in range(self.multi_head_size):
-            scaled_attention.append(torch.matmul(scaled_qkv[i][2],
-                                                 self.softmax(torch.matmul(scaled_qkv[i][1].T, scaled_qkv[i][0]))))
+            scaled_attention.append(torch.matmul(scaled_qkv[i][2], self.softmax(torch.matmul(scaled_qkv[i][1].T, scaled_qkv[i][0]))))
         return scaled_attention
 
     def concat(self, inp, concat_layers):
@@ -119,58 +96,55 @@ class Encoder(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self, device, multi_head_size, seq_length,
+    def __init__(self, device, multi_head_size,
+                 seq_length_inp, seq_length_oup,
                  input_size, middle_size,
                  output_size, encoded_size):
         super(Decoder, self).__init__()
         self.device = device
         self.multi_head_size = multi_head_size
-        self.attention1 = SelfAttention(input_size).to(device)
-        self.attention2 = SelfAttention(input_size).to(device)
-        self.norm = nn.LayerNorm(seq_length, eps=1e-6)
+        self.norm = nn.LayerNorm(seq_length_inp, eps=1e-6)
         self.softmax = nn.Softmax(dim=0)
+        self.bias = False
 
-        self.w_qkv_1 = [torch.normal(mean=0, std=2, size=(input_size, input_size), requires_grad=True).cuda(),
-                        torch.normal(mean=0, std=2, size=(input_size, input_size), requires_grad=True).cuda(),
-                        torch.normal(mean=0, std=2, size=(input_size, input_size), requires_grad=True).cuda()]
-        self.w_qkv_2 = [torch.normal(mean=0, std=2, size=(input_size, input_size), requires_grad=True).cuda(),
-                        torch.normal(mean=0, std=2, size=(input_size, input_size), requires_grad=True).cuda(),
-                        torch.normal(mean=0, std=2, size=(input_size, input_size), requires_grad=True).cuda()]
+        self.w_qkv_1 = nn.Parameter(torch.normal(mean=0, std=2, size=(3, input_size, input_size)))
+        self.w_qkv_2 = nn.Parameter(torch.normal(mean=0, std=2, size=(3, input_size, input_size)))
 
-        self.multi_head_layers_1, self.multi_head_layers_2 = [], []
+        self.multi_head_layers_1, self.multi_head_layers_2 = nn.ModuleList([]), nn.ModuleList([])
         for i in range(multi_head_size):
-            multi_head_layers_1_temp, multi_head_layers_2_temp = [], []
+            multi_head_layers_1_temp, multi_head_layers_2_temp = nn.ModuleList([]), nn.ModuleList([])
             for j in range(3):
-                multi_head_layers_1_temp.append(nn.Sequential(nn.ReLU(), nn.Linear(seq_length, middle_size).to(device),
-                                                              nn.ReLU(), nn.Linear(middle_size, middle_size).to(device),
-                                                              nn.ReLU(), nn.Linear(middle_size, middle_size).to(device),
-                                                              nn.ReLU(), nn.Linear(middle_size, seq_length).to(device)))
-                multi_head_layers_2_temp.append(nn.Sequential(nn.ReLU(), nn.Linear(seq_length, middle_size).to(device),
-                                                              nn.ReLU(), nn.Linear(middle_size, middle_size).to(device),
-                                                              nn.ReLU(), nn.Linear(middle_size, middle_size).to(device),
-                                                              nn.ReLU(), nn.Linear(middle_size, seq_length).to(device)))
+                multi_head_layers_1_temp.append(nn.Sequential(nn.ReLU(), nn.Linear(seq_length_inp, middle_size, bias=self.bias),
+                                                              nn.ReLU(), nn.Linear(middle_size, middle_size, bias=self.bias),
+                                                              nn.ReLU(), nn.Linear(middle_size, middle_size, bias=self.bias),
+                                                              nn.ReLU(), nn.Linear(middle_size, seq_length_inp, bias=self.bias)).to(device))
+                multi_head_layers_2_temp.append(nn.Sequential(nn.ReLU(), nn.Linear(seq_length_inp, middle_size, bias=self.bias),
+                                                              nn.ReLU(), nn.Linear(middle_size, middle_size, bias=self.bias),
+                                                              nn.ReLU(), nn.Linear(middle_size, middle_size, bias=self.bias),
+                                                              nn.ReLU(), nn.Linear(middle_size, seq_length_inp, bias=self.bias)).to(device))
             self.multi_head_layers_1.append(multi_head_layers_1_temp)
             self.multi_head_layers_2.append(multi_head_layers_2_temp)
 
-        self.concat_layers_1 = nn.Sequential(nn.ReLU(), nn.Linear(input_size * multi_head_size, middle_size),
-                                             nn.ReLU(), nn.Linear(middle_size, input_size))
-        self.concat_layers_2 = nn.Sequential(nn.ReLU(), nn.Linear(input_size * multi_head_size, middle_size),
-                                             nn.ReLU(), nn.Linear(middle_size, input_size))
+        self.concat_layers_1 = nn.Sequential(nn.ReLU(),
+                                             nn.Linear(input_size * multi_head_size, middle_size, bias=self.bias),
+                                             nn.ReLU(), nn.Linear(middle_size, input_size, bias=self.bias))
+        self.concat_layers_2 = nn.Sequential(nn.ReLU(),
+                                             nn.Linear(input_size * multi_head_size, middle_size, bias=self.bias),
+                                             nn.ReLU(), nn.Linear(middle_size, input_size, bias=self.bias))
 
-        self.linear_layers_1 = nn.Sequential(nn.ReLU(), nn.Linear(seq_length, middle_size),
-                                             nn.ReLU(), nn.Linear(middle_size, middle_size),
-                                             nn.ReLU(), nn.Linear(middle_size, seq_length))
+        self.linear_layers_1 = nn.Sequential(nn.ReLU(), nn.Linear(seq_length_inp, middle_size, bias=self.bias),
+                                             nn.ReLU(), nn.Linear(middle_size, middle_size, bias=self.bias),
+                                             nn.ReLU(), nn.Linear(middle_size, seq_length_oup, bias=self.bias))
 
-        self.linear_layers_2 = nn.Sequential(nn.ReLU(), nn.Linear(seq_length, middle_size),
-                                             nn.ReLU(), nn.Linear(middle_size, middle_size),
-                                             nn.ReLU(), nn.Linear(middle_size, seq_length),
+        self.linear_layers_2 = nn.Sequential(nn.ReLU(), nn.Linear(seq_length_oup, middle_size, bias=self.bias),
+                                             nn.ReLU(), nn.Linear(middle_size, middle_size, bias=self.bias),
+                                             nn.ReLU(), nn.Linear(middle_size, seq_length_oup, bias=self.bias),
                                              nn.Tanh())
 
     def dot_production_attention(self, scaled_qkv):
         scaled_attention = []
         for i in range(self.multi_head_size):
-            scaled_attention.append(torch.matmul(scaled_qkv[i][2],
-                                                 self.softmax(torch.matmul(scaled_qkv[i][1].T, scaled_qkv[i][0]))))
+            scaled_attention.append(torch.matmul(scaled_qkv[i][2], self.softmax(torch.matmul(scaled_qkv[i][1].T, scaled_qkv[i][0]))))
         return scaled_attention
 
     def concat(self, inp, concat_layers):
@@ -224,27 +198,32 @@ class Decoder(nn.Module):
 
 
 class Pre_Anchors(nn.Module):
-    def __init__(self, device, sequence_length, multi_head_size,
+    def __init__(self, device, sequence_length_inp, sequence_length_oup, multi_head_size,
                  encoder_input_size, encoder_middle_size, encoder_output_size,
                  decoder_input_size, decoder_middle_size, decoder_output_size,
                  paras):
         super().__init__()
-        self.encoder = Encoder(device=device, multi_head_size=multi_head_size, seq_length=sequence_length,
+        self.device = device
+        self.encoder = Encoder(device=device, multi_head_size=multi_head_size,
+                               seq_length_inp=sequence_length_inp, seq_length_oup=sequence_length_oup,
                                input_size=encoder_input_size, middle_size=encoder_middle_size,
                                output_size=encoder_output_size).to(device)
-        self.decoder = Decoder(device=device, multi_head_size=multi_head_size, seq_length=sequence_length,
+        self.decoder = Decoder(device=device, multi_head_size=multi_head_size,
+                               seq_length_inp=sequence_length_inp, seq_length_oup=sequence_length_oup,
                                input_size=decoder_input_size, middle_size=decoder_middle_size,
                                output_size=decoder_output_size, encoded_size=encoder_output_size).to(device)
 
         self.scale_ref = torch.from_numpy(np.array([[paras["limits"][0, 1], paras["limits"][1, 1], math.pi / 2]])).mT.to(device)
+        self.num_step = num_step
 
-    def oup2anchors(self, oup, inp1, inp2):
-        for i in range(0, oup.shape[1], 2):
-            oup[:, i + 1] = torch.add(oup[:, i + 1], oup[:, i])
+    def oup2anchors(self, oup):
         anchors = oup * self.scale_ref
         return anchors
 
     def forward(self, inp1, inp2):
-        oup = self.decoder(self.encoder(inp1), inp2)
-        anchors = self.oup2anchors(oup, inp1, inp2)
+        anchors = torch.tensor([]).to(self.device)
+        for step in range(self.num_step):
+            oup = self.decoder(self.encoder(inp1[step]), inp2[step]).unsqueeze(dim=0)
+            anchors = torch.cat([anchors, self.oup2anchors(oup)])
+
         return anchors

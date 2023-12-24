@@ -1,5 +1,8 @@
 import math
-import time
+import threading
+
+import torch
+from tqdm import tqdm
 from threading import Thread
 
 
@@ -23,9 +26,9 @@ class ModeTrain(Thread):
 
     def run(self):
 
-        for i in range(math.floor(self.datas_inp1.shape[0] / self.batch_size) + 1):
+        for i in tqdm(range(math.floor(self.datas_inp1.shape[0] / self.batch_size) + 1), desc='Train', leave=False, ncols=80):
             anchors = []
-            for j in range(min(self.batch_size, self.datas_inp1.shape[0] - i * self.batch_size)):
+            for j in tqdm(range(min(self.batch_size, self.datas_inp1.shape[0] - i * self.batch_size)), desc='Batch', leave=False, ncols=80):
                 anchors.append(self.model(self.datas_inp1[i * self.batch_size + j], self.datas_inp2[i * self.batch_size + j]))
             self.loss, loss_xy = self.criterion(anchors, self.datas_oup[i * self.batch_size:(i * self.batch_size + len(anchors))])
             self.optimizer.zero_grad()
@@ -38,35 +41,7 @@ class ModeTrain(Thread):
             self.loss_max = max(self.loss_max, loss_xy.max())
 
             self.schedule = (i * self.batch_size + len(anchors)) / self.datas_inp1.shape[0]
-
         self.flag_finish = True
-
-
-def mode_train(model, batch_size,
-               datas_inp1, datas_inp2, datas_oup,
-               criterion, optimizer):
-    loss_min, loss_max = math.inf, 0.0
-    loss = 0.0
-
-    for i in range(math.floor(datas_inp1.shape[0] / batch_size)):
-        anchors = []
-        for j in range(min(batch_size, datas_inp1.shape[0] - (i + 1) * batch_size)):
-            anchors.append(model(datas_inp1[i * batch_size + j], datas_inp2[i * batch_size + j]))
-        loss, loss_xy = criterion(anchors, datas_oup[i * batch_size:(i * batch_size + len(anchors))])
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-        criterion.reinit()
-
-        loss_min = min(loss_min, loss_xy.min())
-        loss_max = max(loss_max, loss_xy.max())
-
-        schedule = "▋" * math.floor((i + 1) / math.floor(datas_inp1.shape[0] / batch_size) * 10)
-        print(f"\rDatasets: {schedule}, {(i + 1)}/{math.floor(datas_inp1.shape[0] / batch_size)}", end='')
-    print()
-
-    # return loss, (math.log(loss_min + 1.0, 10), math.log(loss_max + 1.0, 10))
-    return loss, (loss_min, loss_max)
 
 
 def mode_test(model, criterion,
