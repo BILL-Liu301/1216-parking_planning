@@ -1,6 +1,6 @@
+import os
 import time
 import smtplib
-import threading
 from threading import Thread
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -12,9 +12,13 @@ from .base_path import path_result
 class Sending_email(Thread):
     def __init__(self):
         Thread.__init__(self)
-        self.f = input("请输入源头邮箱：")
+        self.f = input("请输入源头邮箱（学号）：") + '@mail.scut.edu.cn'
         self.p = input("请输入专用密码：")
-        self.t = input("请输入目标邮箱：")
+        self.t = input("请输入目标邮箱（163邮箱）：") + '@163.com'
+        if self.t.split('@')[0] == 'copy':
+            self.t = self.f
+        os.system('CLS')
+        print(f"{self.f} ----> {self.t}")
         self.flag_sending = True
 
     def send_email(self):
@@ -33,8 +37,8 @@ class Sending_email(Thread):
 
     def run(self):
         while self.flag_sending:
-            time.sleep(120)
             try:
                 self.send_email()
-            except Exception:
+            except Exception as e:
                 pass
+            time.sleep(60)

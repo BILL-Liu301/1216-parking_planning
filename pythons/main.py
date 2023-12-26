@@ -64,7 +64,8 @@ if __name__ == '__main__':
 
         optimizer = optim.Adam(PA.parameters(), lr=lr_init)
         # scheduler = lr_scheduler.CosineAnnealingWarmRestarts(optimizer=optimizer, T_0=10, T_mult=3, eta_min=1e-5)
-        scheduler = lr_scheduler.OneCycleLR(optimizer=optimizer, max_lr=lr_init, total_steps=epoch_max, pct_start=0.1)
+        # scheduler = lr_scheduler.OneCycleLR(optimizer=optimizer, max_lr=lr_init, total_steps=epoch_max, pct_start=0.1)
+        scheduler = lr_scheduler.StepLR(optimizer=optimizer, step_size=10, gamma=0.5, last_epoch=-1, verbose=False)
         loss_all = np.zeros([epoch_max, 2])
         lr_all = np.zeros([epoch_max, 1])
 
@@ -77,15 +78,15 @@ if __name__ == '__main__':
                               datas_inp2=dataset["dataset_inp2_train"],
                               datas_oup=dataset["dataset_oup_train"],
                               criterion=criterion_train, optimizer=optimizer)
-            train.run()
+            train.start()
             pynvml.nvmlInit()
             device_count = pynvml.nvmlDeviceGetCount()
             while True:
                 time.sleep(0.5)
                 with open(path_result, 'w') as result:
                     result.write(f"Now: {time.asctime(time.localtime())}")
-                    result.write(f"\nEpoch: {epoch + 1}/{epoch_max}, Lr:{scheduler.get_last_lr()[0] * 1e4:.2f}*1e-4")
-                    result.write(f"\nLoss_min: {train.loss_min:.2f}, Loss_max: {train.loss_max:.2f}")
+                    result.write(f"\nEpoch: {epoch + 1}/{epoch_max}, Lr:{scheduler.get_last_lr()[0]:.6f}")
+                    result.write(f"\nLoss_min: {train.loss_min:.6f}, Loss_max: {train.loss_max:.6f}")
                     result.write(f"\nCPU Percent: {psutil.cpu_percent()}%")
                     for d in range(device_count):
                         handle = pynvml.nvmlDeviceGetHandleByIndex(d)
@@ -96,8 +97,8 @@ if __name__ == '__main__':
                 if train.flag_finish:
                     with open(path_result, 'w') as result:
                         result.write(f"Now: {time.asctime(time.localtime())}")
-                        result.write(f"\nEpoch: {epoch + 1}/{epoch_max}, Lr:{scheduler.get_last_lr()[0] * 1e4:.2f}*1e-4")
-                        result.write(f"\nLoss_min: {train.loss_min:.2f}, Loss_max: {train.loss_max:.2f}")
+                        result.write(f"\nEpoch: {epoch + 1}/{epoch_max}, Lr:{scheduler.get_last_lr()[0]:.6f}")
+                        result.write(f"\nLoss_min: {train.loss_min:.6f}, Loss_max: {train.loss_max:.6f}")
                         result.write(f"\nCPU Percent: {psutil.cpu_percent()}%")
                         for d in range(device_count):
                             handle = pynvml.nvmlDeviceGetHandleByIndex(d)
