@@ -30,7 +30,7 @@ def plot_during_train(epoch, loss_all, lr_all):
     plt.plot(np.arange(0, epoch + 1, 1), lr_all[0:(epoch + 1), 0], "k", label="lr_init")
     plt.legend(loc='upper right')
 
-    plt.pause(0.01)
+    # plt.pause(0.01)
 
 
 def plot_check_once_test(pre, ref, loss_xy, loss_theta):
@@ -61,46 +61,74 @@ def plot_check_once_test(pre, ref, loss_xy, loss_theta):
 def plot_during_test(loss_xy, loss_theta):
     plt.clf()
 
-    max_loss_xy = np.argmax(loss_xy, 1)
-    max_loss_theta = np.argmax(np.abs(loss_theta), 1)
+    max_loss_xy = np.argmax(loss_xy, 2)
+    max_loss_theta = np.argmax(np.abs(loss_theta), 2)
 
+    colors = ['k', 'r', 'g', 'b']
+
+    # 误差曲线
     plt.subplot(2, 2, 1)
-    plt.title("loss_xy")
-    plt.plot(loss_xy.max(1))
+    for i, loss in enumerate(loss_xy.max(0)):
+        plt.plot(loss, colors[i], label=f'Step{i+1}')
+    plt.legend()
 
-    plt.subplot(2, 2, 2)
-    plt.title("loss_xy_distribution")
-    for i in range(loss_xy.shape[1]):
-        plt.bar(i, len(np.where(max_loss_xy == i)[0]), width=1)
-        plt.text(i, len(np.where(max_loss_xy == i)[0]), len(np.where(max_loss_xy == i)[0]), fontsize=10)
+    # 误差分布
+    max_loss = max_loss_xy
+    loss = loss_xy
+    for step in range(max_loss.shape[1]):
+        plt.subplot(2*loss.shape[1], 2, 2*(step+1))
+        for i in range(loss.shape[2]):
+            loss_rate = len(np.where(max_loss[:, step] == i)[0]) / max_loss.shape[0]
+            plt.bar(i, loss_rate, width=1)
+            if len(np.where(max_loss[:, step] == i)[0]) != 0:
+                plt.text(i, loss_rate, f'{loss_rate:.2f}', fontsize=5, ha='center', va='bottom')
+        plt.tick_params(axis='x', pad=0.03, labelsize=7)
+        plt.tick_params(axis='y', pad=0.03, labelsize=10)
+        plt.xlim(-1, loss.shape[2] + 1)
+        plt.ylim(0, 1.1)
+        plt.grid(True)
 
+    # 误差曲线
     plt.subplot(2, 2, 3)
-    plt.title("loss_theta")
-    plt.plot(loss_theta.max(1))
+    for i, loss in enumerate(loss_theta.max(0)):
+        plt.plot(loss, colors[i], label=f'Step{i+1}')
+    plt.legend()
 
-    plt.subplot(2, 2, 4)
-    plt.title("loss_theta_distribution")
-    for i in range(loss_theta.shape[1]):
-        plt.bar(i, len(np.where(max_loss_theta == i)[0]), width=1)
-        plt.text(i, len(np.where(max_loss_theta == i)[0]), len(np.where(max_loss_theta == i)[0]), fontsize=10)
+    # 误差分布
+    max_loss = max_loss_theta
+    loss = loss_theta
+    for step in range(max_loss.shape[1]):
+        ax = plt.subplot(2*loss.shape[1], 2, 2*(step+max_loss.shape[1]+1))
+        for i in range(loss.shape[2]):
+            loss_rate = len(np.where(max_loss[:, step] == i)[0]) / max_loss.shape[0]
+            plt.bar(i, loss_rate, width=1)
+            if len(np.where(max_loss[:, step] == i)[0]) != 0:
+                plt.text(i, loss_rate, f'{loss_rate:.2f}', fontsize=5, ha='center', va='bottom')
+        plt.tick_params(axis='x', pad=0.03, labelsize=7)
+        plt.tick_params(axis='y', pad=0.03, labelsize=10)
+        plt.xlim(-1, loss.shape[2] + 1)
+        plt.ylim(0, 1.1)
+        ax.axvspan(xmin=plt.gca().get_xlim()[0], xmax=plt.gca().get_xlim()[1], ymin=plt.gca().get_ylim()[0], ymax=plt.gca().get_ylim()[1], color='gray', alpha=0.1)
+        plt.grid(True)
+    # plt.show()
 
 
-def plot_trajectories(tra_pre, anchors):
+def plot_trajectories(ref, tra_pre, anchors_steps):
 
     plt.clf()
 
     plot_base()
-    txt = os.path.join(path_solutions, f"{anchors[0, 0]:.4f}_{anchors[1, 0]:.4f}_{anchors[2, 0]:.4f}.txt")
+    txt = os.path.join(path_solutions, f"{ref[0, 0, 0]:.4f}_{ref[0, 1, 0]:.4f}_{ref[0, 2, 0]:.4f}.txt")
     if os.path.exists(txt):
         xy = np.loadtxt(txt)
         plt.plot(xy[:, 2], xy[:, 3], "k--")
+    for anchors in anchors_steps:
+        plt.plot(anchors[0], anchors[1], 'b')
     for tra in tra_pre:
-        plt.plot(tra_pre[tra][:, 0], tra_pre[tra][:, 1])
-    for anchor in range(anchors.shape[1]):
-        plt.plot([anchors[0, anchor], anchors[0, anchor] + math.cos(anchors[2, anchor]) * 0.5],
-                 [anchors[1, anchor], anchors[1, anchor] + math.sin(anchors[2, anchor]) * 0.5], "b")
+        plt.plot(tra_pre[tra][:, 0], tra_pre[tra][:, 1], 'r')
     # plt.show()
-    # plt.pause(0.1)
+    plt.grid(True)
+    plt.pause(0.1)
 
 
 def plot_anchors(anchors):
