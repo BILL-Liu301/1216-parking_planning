@@ -3,83 +3,56 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from .util_plot import plot_base
-from .base_paras import num_step
+from .base_paras import num_step, paras
 
 
-def make_trajectory(anchors, points_per_search=10, r=0.1, eps=1e-3, mode_switch=0):
+def make_trajectory(anchors_steps, points_per_search=10, r=0.1, eps=1e-3, mode_switch=0):
     trajectories = {}
-    for tra in range(num_step):
-        points = anchors[:, (tra * 2):(tra * 2 + 3)]
+    for step, anchors in enumerate(anchors_steps):
 
-        theta = None
-        if max(abs(points[2, 0]), abs(points[2, 2])) >= 80 * math.pi / 180:
-            theta = -(points[2, 0] + points[2, 2]) / 2
-            rotate = np.array([[math.cos(theta), -math.sin(theta)], [math.sin(theta), math.cos(theta)]])
-            points = np.append(np.dot(rotate, points[0:2]), points[2:3] + theta, axis=0)
+        # # 旋转坐标系，避免90°的点
+        # theta = None
+        # if max(abs(anchors[2, 0]), abs(anchors[2, -1])) >= 80 * math.pi / 180:
+        #     theta = -(anchors[2, 0] + anchors[2, -1]) / 2
+        #     rotate = np.array([[math.cos(theta), -math.sin(theta)], [math.sin(theta), math.cos(theta)]])
+        #     points = np.append(np.dot(rotate, anchors[0:2]), anchors[2:3] + theta, axis=0)
 
+        # 最小二乘拟合
         if mode_switch == 0:
-            # A * P = B
-            A = np.array([y_data_1(points[0, 0]),
-                          y_data_1(points[0, 1]),
-                          y_data_1(points[0, 2]),
-                          y_hat_1(points[0, 0]),
-                          y_hat_1(points[0, 1]),
-                          y_hat_1(points[0, 2])])
-            B = np.array([[points[1, 0]], [points[1, 1]], [points[1, 2]],
-                          [math.tan(points[2, 0])], [math.tan(points[2, 1])], [math.tan(points[2, 2])]])
-            P = np.linalg.solve(A, B)
+            P = np.polyfit(anchors[0], anchors[1], 3)
         else:
-            P = cal_abcdef(points)
+            P = None
 
-        # x = np.arange(min(points[0, 0], points[0, 2]), max(points[0, 0], points[0, 2]), 0.1)
-        # y = func(x, P)
-        # y_h = func_hat(points[0, :], P)
-        # # plt.plot(x, y)
-        # plot_base()
-        # anchors_ref = anchors_ref.cpu()
-        # for anchor in range(anchors_ref.shape[1]):
-        #     plt.plot([anchors_ref[0, anchor], anchors_ref[0, anchor] + math.cos(anchors_ref[2, anchor]) * 0.5],
-        #              [anchors_ref[1, anchor], anchors_ref[1, anchor] + math.sin(anchors_ref[2, anchor]) * 0.5], "k--")
-        #     plt.plot(anchors_ref[0, anchor], anchors_ref[1, anchor], "ko")
-        #     plt.pause(1)
-        # for anchor in range(points.shape[1]):
-        #     plt.plot([points[0, anchor], points[0, anchor] + math.cos(points[2, anchor]) * 0.5],
-        #              [points[1, anchor], points[1, anchor] + math.sin(points[2, anchor]) * 0.5], "b--")
-        #     plt.plot(points[0, anchor], points[1, anchor], "b.")
-        #     plt.pause(1)
-        # plt.pause(3)
-        # plt.clf()
-        # continue
-
-        trajectory = np.array([[points[0, 0], points[1, 0]]])
+        trajectory = np.array([[anchors[0, 0], anchors[1, 0]]])
         while True:
             # plot_base()
-            # plt.plot(trajectory[:, 0], trajectory[:, 1], "b*")
+            # plt.plot(trajectory[:, 0], trajectory[:, 1], 'b*')
+            # plt.plot(anchors[0], anchors[1], 'k')
             # plt.pause(0.1)
             # plt.clf()
             x_0, y_0 = trajectory[-1, 0], trajectory[-1, 1]
-            if abs(x_0 - points[0, 2]) <= r:
-                x_1, y_1 = points[0, 2], points[1, 2]
+            if abs(x_0 - anchors[0, -1]) <= r:
+                x_1, y_1 = anchors[0, -1], anchors[1, -1]
                 trajectory = np.append(trajectory, np.array([[x_1, y_1]]), axis=0)
-                if not theta is None:
-                    rotate = np.array([[math.cos(-theta), -math.sin(-theta)], [math.sin(-theta), math.cos(-theta)]])
-                    trajectory = np.dot(rotate, trajectory.transpose()).transpose()
+                # if not theta is None:
+                #     rotate = np.array([[math.cos(-theta), -math.sin(-theta)], [math.sin(-theta), math.cos(-theta)]])
+                #     trajectory = np.dot(rotate, trajectory.transpose()).transpose()
                 break
             else:
-                x = np.arange(min(x_0, x_0 + math.copysign(r * 2, points[0, 1] - points[0, 0])),
-                              max(x_0, x_0 + math.copysign(r * 2, points[0, 1] - points[0, 0])),
+                x = np.arange(min(x_0, x_0 + math.copysign(r * 2, anchors[0, -1] - anchors[0, 0])),
+                              max(x_0, x_0 + math.copysign(r * 2, anchors[0, -1] - anchors[0, 0])),
                               r / points_per_search)
-                y = func(x, P)
+                y = np.poly1d(P)(x)
                 dis = abs(np.sqrt(np.power(x - x_0, 2) + np.power(y - y_0, 2)) - r)
                 x_1 = x[np.where(dis == dis.min())[0][0]]
                 y_1 = y[np.where(dis == dis.min())[0][0]]
                 trajectory = np.append(trajectory, np.array([[x_1, y_1]]), axis=0)
-        trajectories[f"{tra}"] = trajectory
+        trajectories[f"{step}"] = trajectory
 
     # 补上最后那段直线
     trajectory = trajectories[f"{num_step - 1}"]
     x_start, y_start = trajectory[-1, 0], trajectory[-1, 1]
-    x_end, y_end = anchors[0, -1], anchors[1, -1]
+    x_end, y_end = paras['end'][0], paras['end'][1]
     num = round((y_start - y_end) / r)
     trajectory_append = np.stack([np.linspace(x_start, x_end, num)[1:],
                                   np.linspace(y_start, y_end, num)[1:]], axis=0).transpose()
@@ -109,23 +82,17 @@ def cal_abcdef(points):
     x0, y0, k0, c0 = points[0, 0], points[1, 0], math.tan(points[2, 0]), 0.0
     x1, y1, k1, c1 = points[0, 2], points[1, 2], math.tan(points[2, 2]), 0.0
 
-    a = ((
-                     2 * x0 ** 5 * y1 - 2 * x1 ** 5 * y0 + 2 * k0 * x0 * x1 ** 5 - 2 * k1 * x0 ** 5 * x1 + 10 * x0 * x1 ** 4 * y0 - 10 * x0 ** 4 * x1 * y1 - c0 * x0 ** 2 * x1 ** 5 + 2 * c0 * x0 ** 3 * x1 ** 4 - c0 * x0 ** 4 * x1 ** 3 + c1 * x0 ** 3 * x1 ** 4 - 2 * c1 * x0 ** 4 * x1 ** 3 + c1 * x0 ** 5 * x1 ** 2 - 10 * k0 * x0 ** 2 * x1 ** 4 + 8 * k0 * x0 ** 3 * x1 ** 3 - 8 * k1 * x0 ** 3 * x1 ** 3 + 10 * k1 * x0 ** 4 * x1 ** 2 - 20 * x0 ** 2 * x1 ** 3 * y0 + 20 * x0 ** 3 * x1 ** 2 * y1) /
+    a = ((2 * x0 ** 5 * y1 - 2 * x1 ** 5 * y0 + 2 * k0 * x0 * x1 ** 5 - 2 * k1 * x0 ** 5 * x1 + 10 * x0 * x1 ** 4 * y0 - 10 * x0 ** 4 * x1 * y1 - c0 * x0 ** 2 * x1 ** 5 + 2 * c0 * x0 ** 3 * x1 ** 4 - c0 * x0 ** 4 * x1 ** 3 + c1 * x0 ** 3 * x1 ** 4 - 2 * c1 * x0 ** 4 * x1 ** 3 + c1 * x0 ** 5 * x1 ** 2 - 10 * k0 * x0 ** 2 * x1 ** 4 + 8 * k0 * x0 ** 3 * x1 ** 3 - 8 * k1 * x0 ** 3 * x1 ** 3 + 10 * k1 * x0 ** 4 * x1 ** 2 - 20 * x0 ** 2 * x1 ** 3 * y0 + 20 * x0 ** 3 * x1 ** 2 * y1) /
          (2 * (x0 - x1) ** 2 * (x0 ** 3 - 3 * x0 ** 2 * x1 + 3 * x0 * x1 ** 2 - x1 ** 3)))
-    b = ((
-                     2 * k1 * x0 ** 5 - 2 * k0 * x1 ** 5 + 2 * c0 * x0 * x1 ** 5 - 2 * c1 * x0 ** 5 * x1 + 10 * k0 * x0 * x1 ** 4 - 10 * k1 * x0 ** 4 * x1 - c0 * x0 ** 2 * x1 ** 4 - 4 * c0 * x0 ** 3 * x1 ** 3 + 3 * c0 * x0 ** 4 * x1 ** 2 - 3 * c1 * x0 ** 2 * x1 ** 4 + 4 * c1 * x0 ** 3 * x1 ** 3 + c1 * x0 ** 4 * x1 ** 2 + 16 * k0 * x0 ** 2 * x1 ** 3 - 24 * k0 * x0 ** 3 * x1 ** 2 + 24 * k1 * x0 ** 2 * x1 ** 3 - 16 * k1 * x0 ** 3 * x1 ** 2 + 60 * x0 ** 2 * x1 ** 2 * y0 - 60 * x0 ** 2 * x1 ** 2 * y1) /
+    b = ((2 * k1 * x0 ** 5 - 2 * k0 * x1 ** 5 + 2 * c0 * x0 * x1 ** 5 - 2 * c1 * x0 ** 5 * x1 + 10 * k0 * x0 * x1 ** 4 - 10 * k1 * x0 ** 4 * x1 - c0 * x0 ** 2 * x1 ** 4 - 4 * c0 * x0 ** 3 * x1 ** 3 + 3 * c0 * x0 ** 4 * x1 ** 2 - 3 * c1 * x0 ** 2 * x1 ** 4 + 4 * c1 * x0 ** 3 * x1 ** 3 + c1 * x0 ** 4 * x1 ** 2 + 16 * k0 * x0 ** 2 * x1 ** 3 - 24 * k0 * x0 ** 3 * x1 ** 2 + 24 * k1 * x0 ** 2 * x1 ** 3 - 16 * k1 * x0 ** 3 * x1 ** 2 + 60 * x0 ** 2 * x1 ** 2 * y0 - 60 * x0 ** 2 * x1 ** 2 * y1) /
          (2 * (x0 - x1) ** 2 * (x0 ** 3 - 3 * x0 ** 2 * x1 + 3 * x0 * x1 ** 2 - x1 ** 3)))
-    c = (-(
-                c0 * x1 ** 5 - c1 * x0 ** 5 + 4 * c0 * x0 * x1 ** 4 + 3 * c0 * x0 ** 4 * x1 - 3 * c1 * x0 * x1 ** 4 - 4 * c1 * x0 ** 4 * x1 + 36 * k0 * x0 * x1 ** 3 - 24 * k0 * x0 ** 3 * x1 + 24 * k1 * x0 * x1 ** 3 - 36 * k1 * x0 ** 3 * x1 + 60 * x0 * x1 ** 2 * y0 + 60 * x0 ** 2 * x1 * y0 - 60 * x0 * x1 ** 2 * y1 - 60 * x0 ** 2 * x1 * y1 - 8 * c0 * x0 ** 2 * x1 ** 3 + 8 * c1 * x0 ** 3 * x1 ** 2 - 12 * k0 * x0 ** 2 * x1 ** 2 + 12 * k1 * x0 ** 2 * x1 ** 2) /
+    c = (-(c0 * x1 ** 5 - c1 * x0 ** 5 + 4 * c0 * x0 * x1 ** 4 + 3 * c0 * x0 ** 4 * x1 - 3 * c1 * x0 * x1 ** 4 - 4 * c1 * x0 ** 4 * x1 + 36 * k0 * x0 * x1 ** 3 - 24 * k0 * x0 ** 3 * x1 + 24 * k1 * x0 * x1 ** 3 - 36 * k1 * x0 ** 3 * x1 + 60 * x0 * x1 ** 2 * y0 + 60 * x0 ** 2 * x1 * y0 - 60 * x0 * x1 ** 2 * y1 - 60 * x0 ** 2 * x1 * y1 - 8 * c0 * x0 ** 2 * x1 ** 3 + 8 * c1 * x0 ** 3 * x1 ** 2 - 12 * k0 * x0 ** 2 * x1 ** 2 + 12 * k1 * x0 ** 2 * x1 ** 2) /
          (2 * (x0 - x1) ** 2 * (x0 ** 3 - 3 * x0 ** 2 * x1 + 3 * x0 * x1 ** 2 - x1 ** 3)))
-    d = ((
-                     c0 * x0 ** 4 + 3 * c0 * x1 ** 4 - 3 * c1 * x0 ** 4 - c1 * x1 ** 4 - 8 * k0 * x0 ** 3 - 12 * k1 * x0 ** 3 + 12 * k0 * x1 ** 3 + 8 * k1 * x1 ** 3 + 20 * x0 ** 2 * y0 - 20 * x0 ** 2 * y1 + 20 * x1 ** 2 * y0 - 20 * x1 ** 2 * y1 + 4 * c0 * x0 ** 3 * x1 - 4 * c1 * x0 * x1 ** 3 + 28 * k0 * x0 * x1 ** 2 - 32 * k0 * x0 ** 2 * x1 + 32 * k1 * x0 * x1 ** 2 - 28 * k1 * x0 ** 2 * x1 - 8 * c0 * x0 ** 2 * x1 ** 2 + 8 * c1 * x0 ** 2 * x1 ** 2 + 80 * x0 * x1 * y0 - 80 * x0 * x1 * y1) /
+    d = ((c0 * x0 ** 4 + 3 * c0 * x1 ** 4 - 3 * c1 * x0 ** 4 - c1 * x1 ** 4 - 8 * k0 * x0 ** 3 - 12 * k1 * x0 ** 3 + 12 * k0 * x1 ** 3 + 8 * k1 * x1 ** 3 + 20 * x0 ** 2 * y0 - 20 * x0 ** 2 * y1 + 20 * x1 ** 2 * y0 - 20 * x1 ** 2 * y1 + 4 * c0 * x0 ** 3 * x1 - 4 * c1 * x0 * x1 ** 3 + 28 * k0 * x0 * x1 ** 2 - 32 * k0 * x0 ** 2 * x1 + 32 * k1 * x0 * x1 ** 2 - 28 * k1 * x0 ** 2 * x1 - 8 * c0 * x0 ** 2 * x1 ** 2 + 8 * c1 * x0 ** 2 * x1 ** 2 + 80 * x0 * x1 * y0 - 80 * x0 * x1 * y1) /
          (2 * (x0 ** 2 - 2 * x0 * x1 + x1 ** 2) * (x0 ** 3 - 3 * x0 ** 2 * x1 + 3 * x0 * x1 ** 2 - x1 ** 3)))
-    e = (-(
-                30 * x0 * y0 - 30 * x0 * y1 + 30 * x1 * y0 - 30 * x1 * y1 + 2 * c0 * x0 ** 3 + 3 * c0 * x1 ** 3 - 3 * c1 * x0 ** 3 - 2 * c1 * x1 ** 3 - 14 * k0 * x0 ** 2 - 16 * k1 * x0 ** 2 + 16 * k0 * x1 ** 2 + 14 * k1 * x1 ** 2 - 4 * c0 * x0 * x1 ** 2 - c0 * x0 ** 2 * x1 + c1 * x0 * x1 ** 2 + 4 * c1 * x0 ** 2 * x1 - 2 * k0 * x0 * x1 + 2 * k1 * x0 * x1) /
+    e = (-(30 * x0 * y0 - 30 * x0 * y1 + 30 * x1 * y0 - 30 * x1 * y1 + 2 * c0 * x0 ** 3 + 3 * c0 * x1 ** 3 - 3 * c1 * x0 ** 3 - 2 * c1 * x1 ** 3 - 14 * k0 * x0 ** 2 - 16 * k1 * x0 ** 2 + 16 * k0 * x1 ** 2 + 14 * k1 * x1 ** 2 - 4 * c0 * x0 * x1 ** 2 - c0 * x0 ** 2 * x1 + c1 * x0 * x1 ** 2 + 4 * c1 * x0 ** 2 * x1 - 2 * k0 * x0 * x1 + 2 * k1 * x0 * x1) /
          (2 * (x0 - x1) * (x0 ** 4 - 4 * x0 ** 3 * x1 + 6 * x0 ** 2 * x1 ** 2 - 4 * x0 * x1 ** 3 + x1 ** 4)))
-    f = ((
-                     12 * y0 - 12 * y1 - 6 * k0 * x0 - 6 * k1 * x0 + 6 * k0 * x1 + 6 * k1 * x1 + c0 * x0 ** 2 + c0 * x1 ** 2 - c1 * x0 ** 2 - c1 * x1 ** 2 - 2 * c0 * x0 * x1 + 2 * c1 * x0 * x1) /
+    f = ((12 * y0 - 12 * y1 - 6 * k0 * x0 - 6 * k1 * x0 + 6 * k0 * x1 + 6 * k1 * x1 + c0 * x0 ** 2 + c0 * x1 ** 2 - c1 * x0 ** 2 - c1 * x1 ** 2 - 2 * c0 * x0 * x1 + 2 * c1 * x0 * x1) /
          (2 * (x0 - x1) ** 2 * (x0 ** 3 - 3 * x0 ** 2 * x1 + 3 * x0 * x1 ** 2 - x1 ** 3)))
 
     return np.array([[f], [e], [d], [c], [b], [a]])

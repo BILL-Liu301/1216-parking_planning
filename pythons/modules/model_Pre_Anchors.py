@@ -15,6 +15,7 @@ class Encoder(nn.Module):
         self.norm = nn.LayerNorm(seq_length_inp, eps=1e-6)
         self.softmax = nn.Softmax(dim=0)
         self.bias = False
+        self.softmax_switch = False
 
         self.w_qkv_1 = nn.Parameter(torch.normal(mean=0, std=2, size=(3, input_size, input_size)))
         self.w_qkv_2 = nn.Parameter(torch.normal(mean=0, std=2, size=(3, input_size, input_size)))
@@ -24,35 +25,30 @@ class Encoder(nn.Module):
             multi_head_layers_1_temp, multi_head_layers_2_temp = nn.ModuleList([]), nn.ModuleList([])
             for j in range(3):
                 multi_head_layers_1_temp.append(nn.Sequential(nn.ReLU(), nn.Linear(seq_length_inp, middle_size, bias=self.bias),
-                                                              nn.ReLU(), nn.Linear(middle_size, middle_size, bias=self.bias),
-                                                              nn.ReLU(), nn.Linear(middle_size, middle_size, bias=self.bias),
                                                               nn.ReLU(), nn.Linear(middle_size, seq_length_inp, bias=self.bias)).to(device))
                 multi_head_layers_2_temp.append(nn.Sequential(nn.ReLU(), nn.Linear(seq_length_inp, middle_size, bias=self.bias),
-                                                              nn.ReLU(), nn.Linear(middle_size, middle_size, bias=self.bias),
-                                                              nn.ReLU(), nn.Linear(middle_size, middle_size, bias=self.bias),
                                                               nn.ReLU(), nn.Linear(middle_size, seq_length_inp, bias=self.bias)).to(device))
             self.multi_head_layers_1.append(multi_head_layers_1_temp)
             self.multi_head_layers_2.append(multi_head_layers_2_temp)
 
-        self.concat_layers_1 = nn.Sequential(nn.ReLU(),
-                                             nn.Linear(input_size * multi_head_size, middle_size, bias=self.bias),
+        self.concat_layers_1 = nn.Sequential(nn.ReLU(), nn.Linear(input_size * multi_head_size, middle_size, bias=self.bias),
                                              nn.ReLU(), nn.Linear(middle_size, input_size, bias=self.bias))
-        self.concat_layers_2 = nn.Sequential(nn.ReLU(),
-                                             nn.Linear(input_size * multi_head_size, middle_size, bias=self.bias),
+        self.concat_layers_2 = nn.Sequential(nn.ReLU(), nn.Linear(input_size * multi_head_size, middle_size, bias=self.bias),
                                              nn.ReLU(), nn.Linear(middle_size, input_size, bias=self.bias))
 
         self.linear_layers_1 = nn.Sequential(nn.ReLU(), nn.Linear(input_size, middle_size, bias=self.bias),
-                                             nn.ReLU(), nn.Linear(middle_size, middle_size, bias=self.bias),
                                              nn.ReLU(), nn.Linear(middle_size, output_size, bias=self.bias))
 
         self.linear_layers_2 = nn.Sequential(nn.ReLU(), nn.Linear(input_size, middle_size, bias=self.bias),
-                                             nn.ReLU(), nn.Linear(middle_size, middle_size, bias=self.bias),
                                              nn.ReLU(), nn.Linear(middle_size, output_size, bias=self.bias))
 
     def dot_production_attention(self, scaled_qkv):
         scaled_attention = []
         for i in range(self.multi_head_size):
-            scaled_attention.append(torch.matmul(scaled_qkv[i][2], self.softmax(torch.matmul(scaled_qkv[i][1].T, scaled_qkv[i][0]))))
+            if self.softmax_switch:
+                scaled_attention.append(torch.matmul(scaled_qkv[i][2], self.softmax(torch.matmul(scaled_qkv[i][1].T, scaled_qkv[i][0]))))
+            else:
+                scaled_attention.append(torch.matmul(scaled_qkv[i][2], torch.matmul(scaled_qkv[i][1].T, scaled_qkv[i][0])))
         return scaled_attention
 
     def concat(self, inp, concat_layers):
@@ -66,7 +62,8 @@ class Encoder(nn.Module):
         v = torch.matmul(w_qkv[2], inp)
 
         b = torch.matmul(k.T, q)
-        b = self.softmax(b)
+        if self.softmax_switch:
+            b = self.softmax(b)
         oup = torch.matmul(v, b)
         return oup, q, k, v
 
@@ -106,6 +103,7 @@ class Decoder(nn.Module):
         self.norm = nn.LayerNorm(seq_length_inp, eps=1e-6)
         self.softmax = nn.Softmax(dim=0)
         self.bias = False
+        self.softmax_switch = False
 
         self.w_qkv_1 = nn.Parameter(torch.normal(mean=0, std=2, size=(3, input_size, input_size)))
         self.w_qkv_2 = nn.Parameter(torch.normal(mean=0, std=2, size=(3, input_size, input_size)))
@@ -115,36 +113,31 @@ class Decoder(nn.Module):
             multi_head_layers_1_temp, multi_head_layers_2_temp = nn.ModuleList([]), nn.ModuleList([])
             for j in range(3):
                 multi_head_layers_1_temp.append(nn.Sequential(nn.ReLU(), nn.Linear(seq_length_inp, middle_size, bias=self.bias),
-                                                              nn.ReLU(), nn.Linear(middle_size, middle_size, bias=self.bias),
-                                                              nn.ReLU(), nn.Linear(middle_size, middle_size, bias=self.bias),
                                                               nn.ReLU(), nn.Linear(middle_size, seq_length_inp, bias=self.bias)).to(device))
                 multi_head_layers_2_temp.append(nn.Sequential(nn.ReLU(), nn.Linear(seq_length_inp, middle_size, bias=self.bias),
-                                                              nn.ReLU(), nn.Linear(middle_size, middle_size, bias=self.bias),
-                                                              nn.ReLU(), nn.Linear(middle_size, middle_size, bias=self.bias),
                                                               nn.ReLU(), nn.Linear(middle_size, seq_length_inp, bias=self.bias)).to(device))
             self.multi_head_layers_1.append(multi_head_layers_1_temp)
             self.multi_head_layers_2.append(multi_head_layers_2_temp)
 
-        self.concat_layers_1 = nn.Sequential(nn.ReLU(),
-                                             nn.Linear(input_size * multi_head_size, middle_size, bias=self.bias),
+        self.concat_layers_1 = nn.Sequential(nn.ReLU(), nn.Linear(input_size * multi_head_size, middle_size, bias=self.bias),
                                              nn.ReLU(), nn.Linear(middle_size, input_size, bias=self.bias))
-        self.concat_layers_2 = nn.Sequential(nn.ReLU(),
-                                             nn.Linear(input_size * multi_head_size, middle_size, bias=self.bias),
+        self.concat_layers_2 = nn.Sequential(nn.ReLU(), nn.Linear(input_size * multi_head_size, middle_size, bias=self.bias),
                                              nn.ReLU(), nn.Linear(middle_size, input_size, bias=self.bias))
 
         self.linear_layers_1 = nn.Sequential(nn.ReLU(), nn.Linear(seq_length_inp, middle_size, bias=self.bias),
-                                             nn.ReLU(), nn.Linear(middle_size, middle_size, bias=self.bias),
                                              nn.ReLU(), nn.Linear(middle_size, seq_length_oup, bias=self.bias))
 
         self.linear_layers_2 = nn.Sequential(nn.ReLU(), nn.Linear(seq_length_oup, middle_size, bias=self.bias),
-                                             nn.ReLU(), nn.Linear(middle_size, middle_size, bias=self.bias),
                                              nn.ReLU(), nn.Linear(middle_size, seq_length_oup, bias=self.bias),
                                              nn.Tanh())
 
     def dot_production_attention(self, scaled_qkv):
         scaled_attention = []
         for i in range(self.multi_head_size):
-            scaled_attention.append(torch.matmul(scaled_qkv[i][2], self.softmax(torch.matmul(scaled_qkv[i][1].T, scaled_qkv[i][0]))))
+            if self.softmax_switch:
+                scaled_attention.append(torch.matmul(scaled_qkv[i][2], self.softmax(torch.matmul(scaled_qkv[i][1].T, scaled_qkv[i][0]))))
+            else:
+                scaled_attention.append(torch.matmul(scaled_qkv[i][2], torch.matmul(scaled_qkv[i][1].T, scaled_qkv[i][0])))
         return scaled_attention
 
     def concat(self, inp, concat_layers):
@@ -158,7 +151,8 @@ class Decoder(nn.Module):
         v = torch.matmul(w_qkv[2], inp)
 
         b = torch.matmul(k.T, q)
-        b = self.softmax(b)
+        if self.softmax_switch:
+            b = self.softmax(b)
         oup = torch.matmul(v, b)
         return oup, q, k, v
 
@@ -176,7 +170,8 @@ class Decoder(nn.Module):
     def linear_layers(self, inp):
         linear_1 = self.linear_layers_1(inp)
         linear_2 = self.linear_layers_2(linear_1)
-        return torch.add(linear_1, linear_2)
+        # return torch.add(linear_1, linear_2)
+        return linear_2
 
     def angel_normal(self, oup):
         oup[-1, :] = oup[-1, :] % (2 * math.pi)
@@ -205,25 +200,39 @@ class Pre_Anchors(nn.Module):
         super().__init__()
         self.device = device
         self.encoder = Encoder(device=device, multi_head_size=multi_head_size,
-                               seq_length_inp=sequence_length_inp, seq_length_oup=sequence_length_oup,
+                               seq_length_inp=sequence_length_inp, seq_length_oup=sequence_length_oup-1,
                                input_size=encoder_input_size, middle_size=encoder_middle_size,
                                output_size=encoder_output_size).to(device)
         self.decoder = Decoder(device=device, multi_head_size=multi_head_size,
-                               seq_length_inp=sequence_length_inp, seq_length_oup=sequence_length_oup,
+                               seq_length_inp=sequence_length_inp, seq_length_oup=sequence_length_oup-1,
                                input_size=decoder_input_size, middle_size=decoder_middle_size,
                                output_size=decoder_output_size, encoded_size=encoder_output_size).to(device)
 
         self.scale_ref = torch.from_numpy(np.array([[paras["limits"][0, 1], paras["limits"][1, 1], math.pi / 2]])).mT.to(device)
         self.num_step = num_step
+        self.start_dis = torch.zeros([decoder_output_size, 1]).to(device)
 
-    def oup2anchors(self, oup):
-        anchors = oup * self.scale_ref
+    def get_model(self, name):
+        if name == 'encoder':
+            return self.encoder
+        elif name == 'decoder':
+            return self.decoder
+        else:
+            print(f'{name} is not defined!!')
+            return
+
+    def oup2anchors(self, start, oup):
+        oup = torch.cumsum(oup, dim=2)
+        anchors = oup * self.scale_ref + start
         return anchors
 
     def forward(self, inp1, inp2):
         anchors = torch.tensor([]).to(self.device)
         for step in range(self.num_step):
-            oup = self.decoder(self.encoder(inp1[step]), inp2[step]).unsqueeze(dim=0)
-            anchors = torch.cat([anchors, self.oup2anchors(oup)])
-
+            oup = torch.cat([self.start_dis, self.decoder(self.encoder(inp1[step]), inp2[step])], dim=1).unsqueeze(dim=0)
+            if step == 0:
+                start = inp1[0:1, :, 0:1]
+            else:
+                start = anchors[-1:, :, -1:]
+            anchors = torch.cat([anchors, self.oup2anchors(start, oup)])
         return anchors

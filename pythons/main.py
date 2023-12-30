@@ -19,9 +19,8 @@ from modules.util_train_test_val import mode_test, ModeTrain
 from modules.util_plot import plot_during_train, plot_check_once_test, plot_during_test, plot_trajectories
 from modules.util_criterion import Criterion_Train, Criterion_Test
 from modules.util_make_trajectory import make_trajectory
-from modules.base_paras import paras
+from modules.base_paras import paras, num_anchor_state, num_anchor_per_step, num_step
 from modules.analyse_oup_loss import analyse_distribution_anchors, analyse_distribution_loss, analyse_cloud_loss
-from modules.base_paras import num_anchor_state, num_anchor_per_step
 from modules.util_sending_data import Sending_email
 
 torch.manual_seed(2023)
@@ -48,7 +47,7 @@ with open(path_dataset_pkl, 'rb') as pkl:
 # 模式选择器
 mode_switch = {
     "Train": True,
-    "Test": False,
+    "Test": True,
     "Make Trajectory": False,
     "Analyse_Distribution_Position_Origin": False,
     "Analyse_Distribution_Position_train&test": False,
@@ -64,15 +63,15 @@ if __name__ == '__main__':
 
         optimizer = optim.Adam(PA.parameters(), lr=lr_init)
         # scheduler = lr_scheduler.CosineAnnealingWarmRestarts(optimizer=optimizer, T_0=10, T_mult=3, eta_min=1e-5)
-        # scheduler = lr_scheduler.OneCycleLR(optimizer=optimizer, max_lr=lr_init, total_steps=epoch_max, pct_start=0.1)
-        scheduler = lr_scheduler.StepLR(optimizer=optimizer, step_size=10, gamma=0.5, last_epoch=-1, verbose=False)
+        scheduler = lr_scheduler.OneCycleLR(optimizer=optimizer, max_lr=lr_init, total_steps=epoch_max, pct_start=0.1)
+        # scheduler = lr_scheduler.StepLR(optimizer=optimizer, step_size=10, gamma=0.5, last_epoch=-1, verbose=False)
         loss_all = np.zeros([epoch_max, 2])
         lr_all = np.zeros([epoch_max, 1])
 
         # 发送结果
-        sending = Sending_email()
-        sending.start()
-        for epoch in tqdm(range(epoch_max), desc='Epoch', leave=False, ncols=80):
+        # sending = Sending_email()
+        # sending.start()
+        for epoch in tqdm(range(epoch_max), desc='Epoch', leave=False, ncols=80, disable=False):
             train = ModeTrain(model=PA, batch_size=batch_size,
                               datas_inp1=dataset["dataset_inp1_train"],
                               datas_inp2=dataset["dataset_inp2_train"],
@@ -85,20 +84,22 @@ if __name__ == '__main__':
                 time.sleep(0.5)
                 with open(path_result, 'w') as result:
                     result.write(f"Now: {time.asctime(time.localtime())}")
-                    result.write(f"\nEpoch: {epoch + 1}/{epoch_max}, Lr:{scheduler.get_last_lr()[0]:.6f}")
+                    result.write(f"\nEpoch: {epoch+1}/{epoch_max}, Lr:{scheduler.get_last_lr()[0]:.6f}")
                     result.write(f"\nLoss_min: {train.loss_min:.6f}, Loss_max: {train.loss_max:.6f}")
+                    result.write(f"\nGrad: {train.grad_max}, Name: {train.grad_max_name}")
                     result.write(f"\nCPU Percent: {psutil.cpu_percent()}%")
                     for d in range(device_count):
                         handle = pynvml.nvmlDeviceGetHandleByIndex(d)
                         info = pynvml.nvmlDeviceGetMemoryInfo(handle)
                         temperature = pynvml.nvmlDeviceGetTemperature(handle, pynvml.NVML_TEMPERATURE_GPU)
-                        result.write(f"\nGPU: {d}, Used: {info.used/1048576:.2f}MB, Free:{info.free/1048576:.2f}MB, Temperature: {temperature}℃")
+                        result.write(f"\nGPU: {d}, Used: {info.used / 1048576:.2f}MB, Free:{info.free / 1048576:.2f}MB, Temperature: {temperature}℃")
                     result.flush()
                 if train.flag_finish:
                     with open(path_result, 'w') as result:
                         result.write(f"Now: {time.asctime(time.localtime())}")
-                        result.write(f"\nEpoch: {epoch + 1}/{epoch_max}, Lr:{scheduler.get_last_lr()[0]:.6f}")
+                        result.write(f"\nEpoch: {epoch+1}/{epoch_max}, Lr:{scheduler.get_last_lr()[0]:.6f}")
                         result.write(f"\nLoss_min: {train.loss_min:.6f}, Loss_max: {train.loss_max:.6f}")
+                        result.write(f"\nGrad: {train.grad_max}, Name: {train.grad_max_name}")
                         result.write(f"\nCPU Percent: {psutil.cpu_percent()}%")
                         for d in range(device_count):
                             handle = pynvml.nvmlDeviceGetHandleByIndex(d)
@@ -117,38 +118,32 @@ if __name__ == '__main__':
             loss_all[epoch, :] = np.array([train.loss_min, train.loss_max])
             lr_all[epoch, 0] = scheduler.get_last_lr()[0]
             scheduler.step()
-            # plot_during_train(epoch, loss_all, lr_all)
             torch.save(PA, os.path.join(path_pts, f"{epoch}_{loss_all[epoch, 1]:.2f}.pt"))
             if loss_all[epoch, 1] == loss_all[0:(epoch + 1), 1].min():
                 torch.save(PA, path_pt_best)
-
-        sending.flag_sending = False
-
-        plot_during_train(epoch_max - 1, loss_all, lr_all)
-        plt.savefig(f"{path_figs}/train.png")
+            plot_during_train(epoch, loss_all, lr_all)
+            plt.savefig(f"{path_figs}/train.png")
+        # sending.flag_sending = False
     if mode_switch["Test"]:
         plt.clf()
         print("\n正在进行模型测试")
 
         PA = torch.load(path_pt_best)
 
-        dataset_base = "test"
+        dataset_base = "train"
         datas_inp1 = dataset["dataset_inp1_" + dataset_base]
         datas_inp2 = dataset["dataset_inp2_" + dataset_base]
         datas_oup = dataset["dataset_oup_" + dataset_base]
 
-        loss_xy_all = np.zeros([datas_inp1.shape[0], 8])
-        loss_theta_all = np.zeros([datas_inp1.shape[0], 8])
-        for i in range(datas_inp1.shape[0]):
+        loss_xy_all = np.zeros([datas_inp1.shape[0], num_step, num_anchor_per_step])
+        loss_theta_all = np.zeros([datas_inp1.shape[0], num_step, num_anchor_per_step])
+        for i in tqdm(range(datas_inp1.shape[0]), desc='Epoch', leave=False, ncols=80):
             anchors, loss_xy, loss_theta = mode_test(model=PA, criterion=criterion_test,
                                                      data_inp1=datas_inp1[i], data_inp2=datas_inp2[i],
                                                      data_oup=datas_oup[i])
             loss_xy_all[i] = loss_xy
             loss_theta_all[i] = loss_theta
             # plot_check_once_test(anchors, datas_oup[i].cpu().detach().numpy(), loss_xy, loss_theta)
-            schedule = "▋" * math.floor((i + 1) / datas_inp1.shape[0] * 10)
-            print(f"\rDatasets: {schedule}, {(i + 1)}/{datas_inp1.shape[0]}", end='')
-        print()
         plot_during_test(loss_xy_all, loss_theta_all)
         plt.savefig(f"{path_figs}/{dataset_base}.png")
     if mode_switch["Make Trajectory"]:
@@ -157,24 +152,20 @@ if __name__ == '__main__':
 
         PA = torch.load(path_pt_best)
 
-        dataset_base = "test"
+        dataset_base = "train"
         datas_inp1 = dataset["dataset_inp1_" + dataset_base]
         datas_inp2 = dataset["dataset_inp2_" + dataset_base]
         datas_oup = dataset["dataset_oup_" + dataset_base]
 
-        mode = 1
+        mode = 0
 
-        for i in range(datas_inp1.shape[0]):
-            anchors, _, _ = mode_test(model=PA, criterion=criterion_test,
-                                      data_inp1=datas_inp1[i], data_inp2=datas_inp2[i],
-                                      data_oup=datas_oup[i])
-            anchors = np.append(datas_inp1[i, :, 0:1].cpu().numpy(), anchors, axis=1)
-            anchors = np.append(anchors, np.asarray([paras["end"][0:3]]).transpose(), axis=1)
+        for i in tqdm(range(datas_inp1.shape[0]), desc='Epoch', leave=False, ncols=80):
+            anchors, loss_xy, loss_theta = mode_test(model=PA, criterion=criterion_test,
+                                                     data_inp1=datas_inp1[i], data_inp2=datas_inp2[i],
+                                                     data_oup=datas_oup[i])
             trajectories = make_trajectory(anchors, mode_switch=mode)
-            plot_trajectories(trajectories, anchors)
-            plt.savefig(f"{path_figs}/{dataset_base}/{datas_inp1[i, 0, 0]:.2f}_{datas_inp1[i, 1, 0]:.2f}_{datas_inp1[i, 2, 0]:.2f}_{mode}.png")
-            schedule = "▋" * math.floor((i + 1) / datas_inp1.shape[0] * 10)
-            print(f"\rDatasets: {schedule}, {(i + 1)}/{datas_inp1.shape[0]}", end='')
+            plot_trajectories(datas_inp1[i], trajectories, anchors)
+            plt.savefig(f"{path_figs}/{dataset_base}/{datas_inp1[i, 0, 0, 0]:.2f}_{datas_inp1[i, 0, 1, 0]:.2f}_{datas_inp1[i, 0, 2, 0]:.2f}_{mode}.png")
     if mode_switch["Analyse_Distribution_Position_Origin"]:
         plt.clf()
         print("\n正在分析原始节点数据分布")
@@ -283,4 +274,3 @@ if __name__ == '__main__':
         trajectories = make_trajectory(anchors, mode_switch=mode)
         plot_trajectories(trajectories, anchors)
         plt.savefig(f"{path_figs}/Once/{dataset_inp1[0, 0]:.2f}_{dataset_inp1[1, 0]:.2f}_{dataset_inp1[2, 0]:.2f}_{mode}.png")
-
