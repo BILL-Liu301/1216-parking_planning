@@ -26,16 +26,9 @@ from modules.util_sending_data import Sending_email
 torch.manual_seed(2023)
 
 # 模型
-PA = Pre_Anchors(device=device, multi_head_size=sizes['multi_head_size'],
-                 sequence_length_inp=sizes['sequence_length_inp'],
-                 sequence_length_oup=sizes['sequence_length_oup'],
-                 encoder_input_size=sizes['encoder_input_size'],
-                 encoder_middle_size=sizes['encoder_middle_size'],
-                 encoder_output_size=sizes['encoder_output_size'],
-                 decoder_input_size=sizes['decoder_input_size'],
-                 decoder_middle_size=sizes['decoder_middle_size'],
-                 decoder_output_size=sizes['decoder_output_size'],
-                 paras=paras).to(device)
+PA = Pre_Anchors(device=device, sequence_length_inp_1=sizes['sequence_length_inp_1'], sequence_length_inp_2=sizes['sequence_length_inp_2'],
+                 sequence_length_middle=sizes['sequence_length_middle'], sequence_length_oup=sizes['sequence_length_oup'],
+                 multi_head_size=sizes['multi_head_size'], state_size=sizes['state_size'], paras=paras).to(device)
 criterion_train = Criterion_Train()
 criterion_test = Criterion_Test()
 
@@ -46,9 +39,9 @@ with open(path_dataset_pkl, 'rb') as pkl:
 
 # 模式选择器
 mode_switch = {
-    "Train": True,
-    "Test": True,
-    "Make Trajectory": False,
+    "Train": False,
+    "Test": False,
+    "Make Trajectory": True,
     "Analyse_Distribution_Position_Origin": False,
     "Analyse_Distribution_Position_train&test": False,
     "Analyse_Planning_FailAtMatlab": False,
@@ -63,8 +56,8 @@ if __name__ == '__main__':
 
         optimizer = optim.Adam(PA.parameters(), lr=lr_init)
         # scheduler = lr_scheduler.CosineAnnealingWarmRestarts(optimizer=optimizer, T_0=10, T_mult=3, eta_min=1e-5)
-        scheduler = lr_scheduler.OneCycleLR(optimizer=optimizer, max_lr=lr_init, total_steps=epoch_max, pct_start=0.1)
-        # scheduler = lr_scheduler.StepLR(optimizer=optimizer, step_size=10, gamma=0.5, last_epoch=-1, verbose=False)
+        # scheduler = lr_scheduler.OneCycleLR(optimizer=optimizer, max_lr=lr_init, total_steps=epoch_max, pct_start=0.1)
+        scheduler = lr_scheduler.StepLR(optimizer=optimizer, step_size=5, gamma=0.8, last_epoch=-1, verbose=False)
         loss_all = np.zeros([epoch_max, 2])
         lr_all = np.zeros([epoch_max, 1])
 
@@ -84,7 +77,7 @@ if __name__ == '__main__':
                 time.sleep(0.5)
                 with open(path_result, 'w') as result:
                     result.write(f"Now: {time.asctime(time.localtime())}")
-                    result.write(f"\nEpoch: {epoch+1}/{epoch_max}, Lr:{scheduler.get_last_lr()[0]:.6f}")
+                    result.write(f"\nEpoch: {epoch+1}/{epoch_max}, Lr:{scheduler.get_last_lr()[0]}")
                     result.write(f"\nLoss_min: {train.loss_min:.6f}, Loss_max: {train.loss_max:.6f}")
                     result.write(f"\nGrad: {train.grad_max}, Name: {train.grad_max_name}")
                     result.write(f"\nCPU Percent: {psutil.cpu_percent()}%")
@@ -97,7 +90,7 @@ if __name__ == '__main__':
                 if train.flag_finish:
                     with open(path_result, 'w') as result:
                         result.write(f"Now: {time.asctime(time.localtime())}")
-                        result.write(f"\nEpoch: {epoch+1}/{epoch_max}, Lr:{scheduler.get_last_lr()[0]:.6f}")
+                        result.write(f"\nEpoch: {epoch+1}/{epoch_max}, Lr:{scheduler.get_last_lr()[0]}")
                         result.write(f"\nLoss_min: {train.loss_min:.6f}, Loss_max: {train.loss_max:.6f}")
                         result.write(f"\nGrad: {train.grad_max}, Name: {train.grad_max_name}")
                         result.write(f"\nCPU Percent: {psutil.cpu_percent()}%")
@@ -158,7 +151,6 @@ if __name__ == '__main__':
         datas_oup = dataset["dataset_oup_" + dataset_base]
 
         mode = 0
-
         for i in tqdm(range(datas_inp1.shape[0]), desc='Epoch', leave=False, ncols=80):
             anchors, loss_xy, loss_theta = mode_test(model=PA, criterion=criterion_test,
                                                      data_inp1=datas_inp1[i], data_inp2=datas_inp2[i],

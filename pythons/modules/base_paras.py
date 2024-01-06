@@ -9,7 +9,8 @@ num_planning_time_ref = 1.0 * 60
 num_step = 4
 num_anchor_state = 3
 num_anchor_per_step = 30
-num_anchor_inp = 8
+num_inp_1 = 2
+num_inp_2 = 8
 
 # 数据集分布
 ratio_train = 0.65
