@@ -47,12 +47,12 @@ class ModeTrain(Thread):
 
         for i in tqdm(range(math.floor(self.datas_inp1.shape[0] / self.batch_size) + 1), desc='Train', leave=False, ncols=80, disable=False):
 
-            # 交替进行优化
-            if i % 5 == 0:
-                # print(f"[On: {self.turn_on}, Off: {self.turn_off}]")
-                self.turn_off_turn_on(self.model.get_model(self.turn_off), 'off')
-                self.turn_off_turn_on(self.model.get_model(self.turn_on), 'on')
-                self.turn_on, self.turn_off = self.turn_off, self.turn_on
+            # # 交替进行优化
+            # if i % 5 == 0:
+            #     # print(f"[On: {self.turn_on}, Off: {self.turn_off}]")
+            #     self.turn_off_turn_on(self.model.get_model(self.turn_off), 'off')
+            #     self.turn_off_turn_on(self.model.get_model(self.turn_on), 'on')
+            #     self.turn_on, self.turn_off = self.turn_off, self.turn_on
 
             anchors = []
             for j in tqdm(range(min(self.batch_size, self.datas_inp1.shape[0] - i * self.batch_size)), desc='Batch', leave=False, ncols=80):
@@ -69,10 +69,11 @@ class ModeTrain(Thread):
 
             # 判断是否梯度收敛
             self.grad_max, self.grad_max_name = 0.0, ''
-            self.read_grad_max(self.model.encoder, 'encoder')
+            self.read_grad_max(self.model.encoder_1, 'encoder_1')
+            self.read_grad_max(self.model.encoder_2, 'encoder_2')
             self.read_grad_max(self.model.decoder, 'decoder')
             # print(self.grad_max, self.grad_max_name)
-            if self.grad_max <= 0.5 and self.turn_on == 'decoder':
+            if self.grad_max <= 0.01:
                 break
 
             self.schedule = (i * self.batch_size + len(anchors)) / self.datas_inp1.shape[0]

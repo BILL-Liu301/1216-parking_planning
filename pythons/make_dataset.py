@@ -6,40 +6,34 @@ import numpy as np
 from tqdm import tqdm
 
 from modules.base_path import path_solutions, path_anchors_failed, path_dataset_pkl
-from modules.base_paras import num_step, num_anchor_state, num_anchor_per_step, num_anchor_inp, paras
+from modules.base_paras import num_step, num_anchor_state, num_anchor_per_step, num_inp_1, num_inp_2, paras
 from modules.base_paras import ratio_train, ratio_test
 from modules.base_settings import device
 
 
 def cal_inp1(point_s, point_e):
-    inp1 = np.zeros([num_step, num_anchor_state, num_anchor_inp])
+    inp1 = np.zeros([num_step, num_anchor_state, num_inp_1])
     for step in range(num_step):
         inp1[step, :, 0] = point_s
         inp1[step, :, 1] = point_e
-        inp1[step, :, 2] = np.array([paras["limits"][0, 0], paras["limits"][1, 1], 0.0])
-        inp1[step, :, 3] = np.array([paras["limits"][0, 1], paras["limits"][1, 1], 0.0])
-        inp1[step, :, 4] = np.array([paras["limits"][0, 0], paras["Parking_Y"], 0.0])
-        inp1[step, :, 5] = np.array([paras["limits"][0, 1], paras["Parking_Y"], 0.0])
-        inp1[step, :, 6] = np.array([-paras["Parking_X"] / 2, paras["Parking_Y"], 0.0])
-        inp1[step, :, 7] = np.array([paras["Parking_X"] / 2, paras["Parking_Y"], 0.0])
     return inp1
 
 
 def cal_inp2(point_s):
-    x_center = np.array(
-        [-(paras["Parking_X"] / 2 + paras["Freespace_X"]) / 2, (paras["Parking_X"] / 2 + paras["Freespace_X"]) / 2])
-    y_center = np.array(
-        [paras["Parking_Y"] + paras["Freespace_Y"] * 3 / 4, paras["Parking_Y"] + paras["Freespace_Y"] / 4])
-    inp2 = np.zeros([num_step, num_anchor_state, num_anchor_inp])
+    x_center = np.array([-(paras["Parking_X"] / 2 + paras["Freespace_X"]) / 2, (paras["Parking_X"] / 2 + paras["Freespace_X"]) / 2])
+    y_center = np.array([paras["Parking_Y"] + paras["Freespace_Y"] * 3 / 4, paras["Parking_Y"] + paras["Freespace_Y"] / 4])
+    x_limit = np.array([paras['limits'][0, 0], paras['limits'][0, 1]])
+    y_limit = np.array([paras['limits'][1, 0], paras['limits'][1, 1]])
+    inp2 = np.zeros([num_step, num_anchor_state, num_inp_2])
     for step in range(num_step):
-        inp2[step, :, 0] = np.array([step / (num_step - 1), x_center[0], y_center[0]])
-        inp2[step, :, 1] = np.array([step / (num_step - 1), point_s[0] - x_center[0], point_s[1] - y_center[0]])
-        inp2[step, :, 2] = np.array([step / (num_step - 1), x_center[0], y_center[1]])
-        inp2[step, :, 3] = np.array([step / (num_step - 1), point_s[0] - x_center[0], point_s[1] - y_center[1]])
-        inp2[step, :, 4] = np.array([step / (num_step - 1), x_center[1], y_center[0]])
-        inp2[step, :, 5] = np.array([step / (num_step - 1), point_s[0] - x_center[1], point_s[1] - y_center[0]])
-        inp2[step, :, 6] = np.array([step / (num_step - 1), x_center[1], y_center[1]])
-        inp2[step, :, 7] = np.array([step / (num_step - 1), point_s[0] - x_center[1], point_s[1] - y_center[1]])
+        inp2[step, :, 0] = np.array([step / (num_step - 1), point_s[0] - x_center[0], point_s[1] - y_center[0]])
+        inp2[step, :, 1] = np.array([step / (num_step - 1), point_s[0] - x_center[0], point_s[1] - y_center[1]])
+        inp2[step, :, 2] = np.array([step / (num_step - 1), point_s[0] - x_center[1], point_s[1] - y_center[1]])
+        inp2[step, :, 3] = np.array([step / (num_step - 1), point_s[0] - x_center[1], point_s[1] - y_center[1]])
+        inp2[step, :, 4] = np.array([step / (num_step - 1), point_s[0] - x_limit[0], point_s[1] - y_limit[0]])
+        inp2[step, :, 5] = np.array([step / (num_step - 1), point_s[0] - x_limit[0], point_s[1] - y_limit[1]])
+        inp2[step, :, 6] = np.array([step / (num_step - 1), point_s[0] - x_limit[1], point_s[1] - y_limit[1]])
+        inp2[step, :, 7] = np.array([step / (num_step - 1), point_s[0] - x_limit[1], point_s[1] - y_limit[1]])
     return inp2
 
 
@@ -96,11 +90,11 @@ if __name__ == '__main__':
     anchors_failed = np.loadtxt(path_anchors_failed)
 
     # 数据初始化
-    dataset_inp1 = np.zeros([num_solutions, num_step, num_anchor_state, num_anchor_inp])
-    dataset_inp2 = np.zeros([num_solutions, num_step, num_anchor_state, num_anchor_inp])
+    dataset_inp1 = np.zeros([num_solutions, num_step, num_anchor_state, num_inp_1])
+    dataset_inp2 = np.zeros([num_solutions, num_step, num_anchor_state, num_inp_2])
     dataset_oup = np.zeros([num_solutions, num_step, num_anchor_state, num_anchor_per_step])
-    dataset_inp1_failed = np.zeros([anchors_failed.shape[0], num_step, num_anchor_state, num_anchor_inp])
-    dataset_inp2_failed = np.zeros([anchors_failed.shape[0], num_step, num_anchor_state, num_anchor_inp])
+    dataset_inp1_failed = np.zeros([anchors_failed.shape[0], num_step, num_anchor_state, num_inp_1])
+    dataset_inp2_failed = np.zeros([anchors_failed.shape[0], num_step, num_anchor_state, num_inp_2])
     dataset_oup_failed = np.zeros([anchors_failed.shape[0], num_step, num_anchor_state, num_anchor_per_step])
 
     # 训练集和测试集
