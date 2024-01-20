@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 
 # 多线程生成原始数据集
 num_thread = 3
@@ -25,4 +26,11 @@ paras_base = {
                         [-np.pi / 2, np.pi / 2],
                         [-0.8, 0.8],
                         [-5 / 3.6, 5 / 3.6]])
+}
+
+paras_Parking_Trajectory_Planner = {
+    'max_epochs': 100,
+    'lr_init': 1e-3,
+    'size_middle': 16,
+    'device': torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 }

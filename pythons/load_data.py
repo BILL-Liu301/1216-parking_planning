@@ -4,14 +4,12 @@ import numpy as np
 import pickle
 from tqdm import tqdm
 
-from api.base.paths import path_solutions, path_anchors_failed, path_dataset_pkl
+from api.base.paths import path_solutions, path_dataset_pkl
 from api.base.paras import num_step, num_state, num_anchor_per_step, paras_base
 
 
 def read_txt(path_txt):
     solution_np_origin = np.loadtxt(path_txt)  # 原始数据
-    point_s = solution_np_origin[0, 2:5]  # 起点
-    point_e = solution_np_origin[-1, 2:5]  # 终点
     solution_np = np.zeros([num_step, num_state, num_anchor_per_step])
 
     # 分阶段提取数据
@@ -57,13 +55,13 @@ if __name__ == '__main__':
 
     solutions = os.listdir(path_solutions)
     dataset = {
-        'solution': list(),
+        'solutions': list(),
         'map': None
     }
 
     for solution_txt in tqdm(solutions, desc='Dataset', leave=False, ncols=100, disable=False):
         solution = read_txt(path_solutions + solution_txt)
-        dataset['solution'].append(solution)
+        dataset['solutions'].append(solution)
 
     #  ————
     x = np.linspace(-paras_base['Freespace_X'], paras_base['Freespace_X'], math.floor(paras_base['Freespace_X'] * 2 / 0.1) + 1)
