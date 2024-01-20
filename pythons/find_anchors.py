@@ -5,13 +5,14 @@ import time
 import random
 import psutil
 
-from modules.base_path import path_log, path_result, path_anchors_failed
-from modules.base_paras import num_anchor_state, num_samples
-from modules.util_sample_tries import SampleTries
+from api.base.paths import path_log, path_result, path_anchors_failed
+from api.base.paras import num_anchor_state, num_samples
+from api.util.sample_tries import SampleTries
 
 if __name__ == '__main__':
-    # 程序运行中不显示报错
+    # 程序运行中不显示报错，没事别手贱注释掉这个
     os.environ["TF_CPP_MIN_LOG_LEVEL"] = '3'
+
     x_list = np.linspace(start=-8.5, stop=-1.5, num=29)
     y_list = np.linspace(start=7.0, stop=12.0, num=21)
     theta_list = np.linspace(start=-math.pi / 3, stop=math.pi / 3, num=13)
