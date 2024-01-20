@@ -1,9 +1,13 @@
 import numpy as np
 
 # 多线程生成原始数据集
-num_anchor_state = 3
-num_samples = 3
+num_thread = 3
 num_planning_time_ref = 1.0 * 60
+
+# 参数设定
+num_state = 3
+num_step = 4
+num_anchor_per_step = 30
 
 # 基础参数
 paras_base = {

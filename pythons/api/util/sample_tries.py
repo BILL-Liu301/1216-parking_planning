@@ -1,4 +1,4 @@
-from pythons.api.base.paras import num_samples
+from pythons.api.base.paras import num_thread
 from .try_optim import TryOptim
 from .plots import plot_failed_init
 
@@ -19,7 +19,7 @@ class SampleTries:
         self.RunningOrNot = " "
 
     def set_tries(self):
-        for sample in range(num_samples):
+        for sample in range(num_thread):
             self.tries_optim.append(TryOptim(self.init_data[sample]))
 
     def set_run(self):

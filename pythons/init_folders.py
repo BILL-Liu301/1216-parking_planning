@@ -1,9 +1,9 @@
 import os
 import shutil
 
-from modules.base_path import path_base, path_dataset
-from modules.base_path import path_pts, path_solutions
-from modules.base_path import path_figs, path_figs_init, path_figs_train, path_figs_test, path_figs_once, path_figs_failed, path_figs_all
+from api.base.paths import path_base, path_dataset
+from api.base.paths import path_solutions
+from api.base.paths import path_figs, path_figs_init, path_figs_train, path_figs_test, path_figs_once, path_figs_failed, path_figs_all
 
 print(f"警告！警告！即将删除“{path_base}”！！！")
 print(f"请进行确认！！！")
@@ -16,7 +16,6 @@ if flag:
     os.mkdir(path_base)
 
     os.mkdir(path_dataset)
-    os.mkdir(path_pts)
     os.mkdir(path_solutions)
 
     os.mkdir(path_figs)
