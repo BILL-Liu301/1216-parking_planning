@@ -61,7 +61,7 @@ if __name__ == '__main__':
 
     for solution_txt in tqdm(solutions, desc='Dataset', leave=False, ncols=100, disable=False):
         solution = read_txt(path_solutions + solution_txt)
-        dataset['solutions'].append(solution)
+        dataset['solutions'].append(solution.transpose(0, 2, 1))
 
     #  ————
     x = np.linspace(-paras_base['Freespace_X'], paras_base['Freespace_X'], math.floor(paras_base['Freespace_X'] * 2 / 0.1) + 1)

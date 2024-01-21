@@ -1,4 +1,5 @@
 import pickle
+import torch
 from torch.utils.data import Dataset
 
 
@@ -17,4 +18,4 @@ class Parking_Trajectory_Planner_Dataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, item):
-        return self.data[item]
+        return torch.from_numpy(self.data[item]).to(torch.float32)

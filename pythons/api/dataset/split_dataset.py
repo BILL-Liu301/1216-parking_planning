@@ -14,10 +14,10 @@ train_set_size = int(len(train_valid_set) * 0.8)
 valid_set_size = len(train_valid_set) - train_set_size
 train_set, valid_set = random_split(train_valid_set, [train_set_size, valid_set_size])
 
-dataset_loader_train = DataLoader(train_set, batch_size=16, shuffle=True, pin_memory=True, num_workers=0)
-dataset_loader_val = DataLoader(valid_set, batch_size=16, pin_memory=True, num_workers=0)
-dataset_loader_test = DataLoader(test_set, batch_size=5, pin_memory=True, num_workers=0)
-paras_Prediction_Seq2Seq_dataset = {
+dataset_loader_train = DataLoader(train_set, batch_size=128, shuffle=True, pin_memory=True, num_workers=0)
+dataset_loader_val = DataLoader(valid_set, batch_size=128, pin_memory=True, num_workers=0)
+dataset_loader_test = DataLoader(test_set, batch_size=128, pin_memory=True, num_workers=0)
+paras_Parking_Trajectory_Planner_dataset = {
     'dataset_loader_train': dataset_loader_train,
     'dataset_loader_val': dataset_loader_val,
     'dataset_loader_test': dataset_loader_test
