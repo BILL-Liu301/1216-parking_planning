@@ -28,6 +28,7 @@ class Parking_Trajectory_Planner(nn.Module):
         self.delta_limit_mean = paras['delta_limit_mean'].to(self.device)
         self.delta_limit_var = paras['delta_limit_var']
         self.end_point = paras['end_point'].to(self.device)
+        self.pre_dis = paras['pre_dis']
 
         # 模型设计
         self.planners = nn.ModuleList()
@@ -35,7 +36,7 @@ class Parking_Trajectory_Planner(nn.Module):
         self.c0 = torch.ones([self.D * self.num_layers, 1, self.size_middle]).to(self.device)
         for step in range(self.num_step):
             model_per_step = nn.ModuleDict()
-            # 对上一时刻的x, y, theta进行编码
+            # 对上一时刻的[x, y, theta]，下一时刻的[x, y, theta]预测，以及和终点的距离进行编码
             model_per_step.update({'encoder_history': nn.Sequential(nn.Linear(in_features=self.len_info_loc * 2, out_features=self.size_middle, bias=self.bias),
                                                                     nn.LayerNorm(normalized_shape=self.size_middle, elementwise_affine=False))})
             # 时序预测核心
@@ -81,8 +82,8 @@ class Parking_Trajectory_Planner_LightningModule(pl.LightningModule):
 
         self.model = Parking_Trajectory_Planner(paras)
         self.criterion_train = nn.GaussianNLLLoss(reduction='mean')
-        self.criterion_val = Criterion_Dis(car_length=4.0, weight=0.8, reduction='max')
-        self.criterion_test = Criterion_Dis(car_length=4.0, weight=0.8, reduction='none')
+        self.criterion_val = Criterion_Dis(car_length=4.0, weight=0.5, reduction='max')
+        self.criterion_test = Criterion_Dis(car_length=4.0, weight=0.5, reduction='none')
         self.optimizer = optim.Adam(self.parameters(), paras['lr_init'])
         self.scheduler = lr_scheduler.OneCycleLR(optimizer=self.optimizer, max_lr=paras['lr_init'], total_steps=paras['max_epochs'], pct_start=0.1)
 
@@ -131,10 +132,10 @@ class Parking_Trajectory_Planner_LightningModule(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         pre_mean, ref_mean, pre_var = self.run_base(batch, 'val')
         loss_nll = self.criterion_train(pre_mean, ref_mean, pre_var)
-        loss_mse = self.criterion_val(pre_mean, ref_mean)
+        loss_dis = self.criterion_val(pre_mean, ref_mean)
 
         self.log('loss_val_nll', loss_nll, prog_bar=True)
-        self.log('loss_val_dis', loss_mse, prog_bar=True)
+        self.log('loss_val_dis', loss_dis, prog_bar=True)
 
     def configure_optimizers(self):
         return [self.optimizer], [self.scheduler]

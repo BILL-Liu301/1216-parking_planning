@@ -16,9 +16,9 @@ if __name__ == '__main__':
     pl.seed_everything(2024)
     plt.figure(figsize=(20, 11.25))
 
-    # # 为了好看，屏蔽warning，没事别解注释这个
-    # warnings.filterwarnings('ignore', category=PossibleUserWarning)
-    # warnings.filterwarnings('ignore', category=UserWarning)
+    # 为了好看，屏蔽warning，没事别解注释这个
+    warnings.filterwarnings('ignore', category=PossibleUserWarning)
+    warnings.filterwarnings('ignore', category=UserWarning)
 
     # 找到ckpt
     path_version = path_ckpts + 'version_0/checkpoints/'

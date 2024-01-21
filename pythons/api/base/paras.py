@@ -33,12 +33,15 @@ paras_Parking_Trajectory_Planner = {
     'max_epochs': 100,
     'lr_init': 1e-3,
     'size_middle': 16,
+    'size_occupy': 10,  # 单方向
+    'dis_occupy': 5,  # 单方向
     'num_layers': 2,
     'device': torch.device('cuda' if torch.cuda.is_available() else 'cpu'),
     'num_anchor_per_step': num_anchor_per_step,
     'num_step': num_step,
     'len_info_loc': 3,
-    'delta_limit_mean': torch.tensor([5.0, 5.0, 2 * math.pi]),
+    'delta_limit_mean': torch.tensor([1.0, 1.0, math.pi]),
     'delta_limit_var': 5.0,
-    'end_point': torch.tensor([0.0, 1.5, math.pi / 2])
+    'end_point': torch.tensor([0.0, 1.5, math.pi / 2]),
+    'car_length': paras_base['Car_Length']
 }
