@@ -39,8 +39,8 @@ class Parking_Trajectory_Planner(nn.Module):
         self.c0 = torch.ones([self.D * self.num_layers, 1, self.size_middle]).to(self.device)
         for step in range(self.num_step):
             model_per_step = nn.ModuleDict()
-            # 对上一时刻的[x, y, theta]，下一时刻的[x, y, theta]预测，以及和终点的距离进行编码
-            model_per_step.update({'encode_last_anchor': nn.Sequential(nn.Linear(in_features=self.len_info_loc * 2, out_features=self.size_middle, bias=self.bias),
+            # 对上一时刻的[x, y, theta]，和终点的距离，上一时刻的var进行编码
+            model_per_step.update({'encode_last_anchor': nn.Sequential(nn.Linear(in_features=self.len_info_loc * 3, out_features=self.size_middle, bias=self.bias),
                                                                        nn.LayerNorm(normalized_shape=self.size_middle, elementwise_affine=False))})
             model_per_step.update({'encode_last_map_linear_q': nn.Linear(in_features=2, out_features=self.size_middle, bias=self.bias)})
             model_per_step.update({'encode_last_map_linear_k': nn.Linear(in_features=2, out_features=self.size_middle, bias=self.bias)})
@@ -99,23 +99,34 @@ class Parking_Trajectory_Planner(nn.Module):
 
         batch_size = inp_start_point.shape[0]
         pre_mean, pre_var = list(), list()
+        views = list()
         anchor_last = inp_start_point.clone()
-        var_last = torch.ones(inp_start_point.shape).to(self.device)
+        var_last = (torch.ones(inp_start_point.shape) * 0.01).to(self.device)
         for step, model_per_step in enumerate(self.planners):
             decode_mean, decode_var = [anchor_last], [var_last]
+            views_temp = [self.cal_map_last(batch_size, anchor_last).transpose(1, 2).unsqueeze(1)]
+            h, c = self.h0.repeat(1, batch_size, 1), self.c0.repeat(1, batch_size, 1)
             for anchor in range(self.num_anchor_per_step - 1):
-                encode_last_anchor = model_per_step['encode_last_anchor'](torch.cat([anchor_last, anchor_last - self.end_point], dim=2))
+                # 编码上一时刻轨迹点
+                encode_last_anchor = model_per_step['encode_last_anchor'](torch.cat([anchor_last, anchor_last - self.end_point, var_last], dim=2))
+                # 编码上一时刻观察到的地图范围
                 encode_last_map = self.encode_last_map(batch_size, anchor_last, model_per_step)
-                main_lstm, _ = model_per_step['main_lstm'](torch.cat([encode_last_anchor, encode_last_map], dim=2), (self.h0.repeat(1, batch_size, 1), self.c0.repeat(1, batch_size, 1)))
+                # 将数据输入lstm进行编码
+                main_lstm, (h, c) = model_per_step['main_lstm'](torch.cat([encode_last_anchor, encode_last_map], dim=2), (h, c))
                 main_norm = model_per_step['main_norm'](main_lstm)
+                # 分别对下一时刻的均值与方差进行解码
                 decode_mean.append(model_per_step['decode_mean'](main_norm) * self.delta_limit_mean + anchor_last)
                 decode_var.append(model_per_step['decode_var'](main_norm) * self.delta_limit_var)
+                # 更新“上一时刻”
                 anchor_last = decode_mean[-1].clone()
+                views_temp.append(self.cal_map_last(batch_size, anchor_last).transpose(1, 2).unsqueeze(1))
             pre_mean.append(torch.cat(decode_mean, dim=1).unsqueeze(1))
             pre_var.append(torch.cat(decode_var, dim=1).unsqueeze(1))
+            views.append(torch.cat(views_temp, dim=1).unsqueeze(1))
         pre_mean = torch.cat(pre_mean, dim=1)
         pre_var = torch.cat(pre_var, dim=1)
-        return pre_mean, pre_var
+        views = torch.cat(views, dim=1)
+        return pre_mean, pre_var, views
 
 
 class Parking_Trajectory_Planner_LightningModule(pl.LightningModule):
@@ -126,7 +137,8 @@ class Parking_Trajectory_Planner_LightningModule(pl.LightningModule):
         self.model = Parking_Trajectory_Planner(paras)
         self.criterion_train = nn.GaussianNLLLoss(reduction='mean')
         self.criterion_val = Criterion_Dis(car_length=4.0, weight=0.5, reduction='max')
-        self.criterion_test = Criterion_Dis(car_length=4.0, weight=0.5, reduction='none')
+        self.criterion_test_dis = Criterion_Dis(car_length=4.0, weight=0.5, reduction='none')
+        self.criterion_test_L1 = nn.L1Loss(reduction='none')
         self.optimizer = optim.Adam(self.parameters(), paras['lr_init'])
         self.scheduler = lr_scheduler.OneCycleLR(optimizer=self.optimizer, max_lr=paras['lr_init'], total_steps=paras['max_epochs'], pct_start=0.1)
 
@@ -138,12 +150,12 @@ class Parking_Trajectory_Planner_LightningModule(pl.LightningModule):
 
     def run_base(self, batch, mode='test'):
         inp_start_point = batch[:, 0, 0:1]
-        pre_mean, pre_var = self.model(inp_start_point)
+        pre_mean, pre_var, views = self.model(inp_start_point)
         ref_mean = batch
-        return pre_mean, ref_mean, pre_var
+        return pre_mean, ref_mean, pre_var, views
 
     def training_step(self, batch, batch_idx):
-        pre_mean, ref_mean, pre_var = self.run_base(batch, batch_idx)
+        pre_mean, ref_mean, pre_var, _ = self.run_base(batch, batch_idx)
         loss_train = self.criterion_train(pre_mean, ref_mean, pre_var)
 
         self.log('loss_train', loss_train, prog_bar=True)
@@ -152,21 +164,24 @@ class Parking_Trajectory_Planner_LightningModule(pl.LightningModule):
 
     def test_step(self, batch, batch_idx):
         with torch.no_grad():
-            pre_mean, ref_mean, pre_var = self.run_base(batch, batch_idx)
-        losses = self.criterion_test(pre_mean, ref_mean)
+            pre_mean, ref_mean, pre_var, views = self.run_base(batch, batch_idx)
+        losses_dis = self.criterion_test_dis(pre_mean, ref_mean)
+        losses_l1 = self.criterion_test_L1(pre_mean, ref_mean)
         for b in range(len(batch)):
             self.test_results.append({
                 'pre': pre_mean[b].cpu().numpy().transpose(0, 2, 1),
+                'view': views[b].cpu().numpy().transpose(0, 2, 3, 1),
                 'ref': ref_mean[b].cpu().numpy().transpose(0, 2, 1),
                 'pre_var': pre_var[b].cpu().numpy().transpose(0, 2, 1),
-                'loss': losses[b].cpu().numpy().transpose(0, 2, 1)
+                'loss_dis': losses_dis[b].cpu().numpy().transpose(0, 2, 1),
+                'loss_l1': losses_l1[b].cpu().numpy().transpose(0, 2, 1)
             })
-            loss = losses[b]
-            self.test_losses['mean'].append(loss.mean().unsqueeze(0))
-            self.test_losses['max'].append(loss.max().unsqueeze(0))
+            loss_dis = losses_dis[b]
+            self.test_losses['mean'].append(loss_dis.mean().unsqueeze(0))
+            self.test_losses['max'].append(loss_dis.max().unsqueeze(0))
 
     def validation_step(self, batch, batch_idx):
-        pre_mean, ref_mean, pre_var = self.run_base(batch, 'val')
+        pre_mean, ref_mean, pre_var, _ = self.run_base(batch, 'val')
         loss_nll = self.criterion_train(pre_mean, ref_mean, pre_var)
         loss_dis = self.criterion_val(pre_mean, ref_mean)
 

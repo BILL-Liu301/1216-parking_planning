@@ -95,8 +95,8 @@ paras_Parking_Trajectory_Planner = {
     'num_anchor_per_step': num_anchor_per_step,
     'num_step': num_step,
     'len_info_loc': 3,
-    'delta_limit_mean': np.array([1.0, 1.0, math.pi]),
-    'delta_limit_var': 5.0,
+    'delta_limit_mean': np.array([2.0, 2.0, math.pi]),
+    'delta_limit_var': 10.0,
     'end_point': np.array([0.0, 1.5, math.pi / 2]),
     'car_length': paras_base['Car_Length']
 }

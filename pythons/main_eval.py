@@ -10,7 +10,7 @@ from api.base.paras import paras_Parking_Trajectory_Planner
 from api.dataset.split_dataset import paras_Parking_Trajectory_Planner_dataset
 from api.model.model import Parking_Trajectory_Planner_LightningModule
 from api.base.paths import path_ckpt_best_version, path_ckpts, path_figs_test
-from pythons.api.util.plots import plot_for_results
+from pythons.api.util.plots import plot_for_results_macro, plot_for_results_micro, plot_for_results_dynamic
 
 if __name__ == '__main__':
     pl.seed_everything(2024)
@@ -38,5 +38,11 @@ if __name__ == '__main__':
     print(f'平均最大误差：{loss_max.mean()}m')
     for i in tqdm(range(0, len(model_lighting.test_results), 1), desc='Test', leave=False, ncols=100, disable=False):
         test_results = model_lighting.test_results[i]
-        plot_for_results(test_results, paras_Parking_Trajectory_Planner)
-        plt.savefig(path_figs_test + f'{i}.png')
+        # 动态分析
+        plot_for_results_dynamic(test_results, paras_Parking_Trajectory_Planner)
+        # 全局分析
+        plot_for_results_macro(test_results, paras_Parking_Trajectory_Planner)
+        plt.savefig(path_figs_test + f'macro_{i}.png')
+        # 局部误差分析
+        plot_for_results_micro(test_results, paras_Parking_Trajectory_Planner)
+        plt.savefig(path_figs_test + f'micro_{i}.png')
