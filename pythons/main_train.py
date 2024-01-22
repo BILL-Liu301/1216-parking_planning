@@ -1,7 +1,6 @@
 import os
 import shutil
 import warnings
-import matplotlib.pyplot as plt
 import pytorch_lightning as pl
 from lightning_fabric.utilities.warnings import PossibleUserWarning
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, ModelSummary, GradientAccumulationScheduler, Timer

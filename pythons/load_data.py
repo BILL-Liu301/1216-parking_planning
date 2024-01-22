@@ -5,8 +5,7 @@ import pickle
 from tqdm import tqdm
 
 from api.base.paths import path_solutions, path_dataset_pkl
-from api.base.paras import num_step, num_state, num_anchor_per_step, paras_base
-from api.base.map import map_np
+from api.base.paras import num_step, num_state, num_anchor_per_step, map_np
 
 
 def read_txt(path_txt):
