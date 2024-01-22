@@ -17,7 +17,7 @@ paras_base = {
     'Freespace_Y': 8.0,
     'Parking_X': 2.5,
     'Parking_Y': 5.5,
-    'Car_Length': 4.0,
+    'Car_Length': 2.8,
     'Car_Width': 1.9,
     'Car_L': 2.5,
     'tf': 240,

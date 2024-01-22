@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from matplotlib import patches
+from matplotlib.patches import Polygon, Circle
 
 from pythons.api.base.paras import paras_base
 from pythons.api.base.paths import path_figs_init
@@ -88,7 +88,7 @@ def plot_for_results_micro_x_y_theta(plot_id, data_id, name, colors, labels, _re
         xx = np.append(x + step * paras['num_anchor_per_step'], np.flip(x + step * paras['num_anchor_per_step']), axis=0)
         for i in range(3):
             yy = np.append(pre[step, data_id] + std[step, data_id] * (3 - i), np.flip(pre[step, data_id] - std[step, data_id] * (3 - i)), axis=0)
-            polygon = patches.Polygon(np.column_stack((xx, yy)), color=colors_sigma[i], alpha=0.3)
+            polygon = Polygon(np.column_stack((xx, yy)), color=colors_sigma[i], alpha=0.3)
             ax.add_patch(polygon)
     plt.ylabel(name, fontsize=15)
     plt.legend(loc='lower right')
@@ -127,17 +127,36 @@ def plot_for_results_dynamic(_result, paras):
     pre = np.concatenate([_result['pre'][i] for i in range(paras['num_step'])], axis=-1)
     ref = _result['ref']
     view = np.concatenate([_result['view'][i] for i in range(paras['num_step'])], axis=-1)
+    map_np = paras['map']
 
-    plt.subplot(1, 2, 1)
-    plot_base()
-    xlim, ylim = plt.xlim(), plt.ylim()
     for stamp in range(pre.shape[-1]):
+        ax = plt.subplot(1, 2, 1)
         # 基本场景
+        # plot_base()
+        plt.plot(map_np[0], map_np[1], "ko")
+        xlim, ylim = plt.xlim(), plt.ylim()
         for step in range(paras['num_step']):
-            plt.plot(ref[step, 0], ref[step, 1], colors[step] + '-', label=labels[step])
-            plt.xlim(xlim)
-            plt.ylim(ylim)
-            plt.legend(loc='lower right')
+            plt.plot(ref[step, 0], ref[step, 1], colors[step] + '--', label=labels[step])
 
         # 车辆
-        plt.plot(pre[0, stamp], pre[1, stamp])
+        plt.plot(pre[0, stamp], pre[1, stamp], 'ko')
+        plt.arrow(pre[0, stamp], pre[1, stamp], paras['car_length'] * np.cos(pre[2, stamp]), paras['car_length'] * np.sin(pre[2, stamp]), head_width=0.3, head_length=0.5)
+        circle = Circle((pre[0, stamp], pre[1, stamp]), paras['map_range'], fill=False)
+        ax.add_artist(circle)
+        plt.plot(pre[0, 0:(stamp + 1)], pre[1, 0:(stamp + 1)], 'k-')
+
+        plt.xlim(xlim)
+        plt.ylim(ylim)
+        plt.legend(loc='lower right')
+
+        ax = plt.subplot(1, 2, 2)
+        # 基本场景
+        plt.plot(view[0, :, stamp], view[1, :, stamp], 'ko')
+        plt.arrow(0.0, 0.0, paras['car_length'], 0.0, head_width=0.3, head_length=0.5)
+        circle = Circle((0.0, 0.0), paras['map_range'], fill=False)
+        ax.add_artist(circle)
+        plt.xlim([-paras['map_range'], paras['map_range']])
+        plt.ylim([-paras['map_range'], paras['map_range']])
+
+        plt.pause(0.1)
+        plt.clf()

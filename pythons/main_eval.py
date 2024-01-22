@@ -40,9 +40,9 @@ if __name__ == '__main__':
         test_results = model_lighting.test_results[i]
         # 动态分析
         plot_for_results_dynamic(test_results, paras_Parking_Trajectory_Planner)
-        # 全局分析
-        plot_for_results_macro(test_results, paras_Parking_Trajectory_Planner)
-        plt.savefig(path_figs_test + f'macro_{i}.png')
-        # 局部误差分析
-        plot_for_results_micro(test_results, paras_Parking_Trajectory_Planner)
-        plt.savefig(path_figs_test + f'micro_{i}.png')
+        # # 全局分析
+        # plot_for_results_macro(test_results, paras_Parking_Trajectory_Planner)
+        # plt.savefig(path_figs_test + f'macro_{i}.png')
+        # # 局部误差分析
+        # plot_for_results_micro(test_results, paras_Parking_Trajectory_Planner)
+        # plt.savefig(path_figs_test + f'micro_{i}.png')

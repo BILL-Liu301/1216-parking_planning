@@ -64,7 +64,7 @@ class Parking_Trajectory_Planner(nn.Module):
 
     def cal_map_last(self, batch_size, anchor_last):
         # 计算平移和旋转后的map
-        map_ = (self.map.T.repeat(batch_size, 1, 1) - anchor_last[:, 0, 0:2].unsqueeze(1)).transpose(1, 2)
+        map_ = (self.map.T.repeat(batch_size, 1, 1) - anchor_last[:, :, 0:2]).transpose(1, 2)
         rotate_matrix = torch.cat([torch.cat([torch.cos(anchor_last[:, :, -1:]), torch.sin(anchor_last[:, :, -1:])], dim=2),
                                    torch.cat([-torch.sin(anchor_last[:, :, -1:]), torch.cos(anchor_last[:, :, -1:])], dim=2)], dim=1)
         map_last_all = torch.matmul(rotate_matrix, map_)
@@ -72,16 +72,21 @@ class Parking_Trajectory_Planner(nn.Module):
         # 计算点距，并将大于map_range的赋为1e10，用于排序的时候放在最后，并删掉
         map_dis = torch.sqrt(torch.sum(torch.pow(map_last_all, 2), dim=1, keepdim=True)).repeat(1, 2, 1)
         map_last_all[map_dis >= self.map_range] = 1e10
-        map_in_range, _ = map_last_all.sort()
-        map_in_range[map_in_range >= 1e9] = 0.0
+
+        index = torch.argsort(map_last_all[:, 0, :])
+
+        # 下面这一行代码会降低程序运行效率，是可以优化的对象
+        map_last_all = torch.stack([map_last_all[b, :, index[b]] for b in range(map_last_all.shape[0])], dim=0)
+
+        map_last_all[map_last_all >= 1e9] = 0.0
 
         # pad操作，并将序列长度截取为map_num_max
-        if (map_in_range.nonzero().shape[0] / (map_in_range.shape[0] * 2)) > (self.map_num_max + 20):
+        if (map_last_all.nonzero().shape[0] / (map_last_all.shape[0] * 2)) > (self.map_num_max + 20):
             # 截去的点数过多
-            print(f'{map_in_range.nonzero().shape[0] / (map_in_range.shape[0] * 2)} is out range of {self.map_num_max}')
+            print(f'{map_last_all.nonzero().shape[0] / (map_last_all.shape[0] * 2)} is out range of {self.map_num_max}')
             raise Exception
-        map_last = F.pad(map_in_range, [0, self.map_num_max - map_in_range.shape[2]], mode='constant', value=0.0).transpose(1, 2)
-        return map_last
+        map_last_in_range = F.pad(map_last_all, [0, self.map_num_max - map_last_all.shape[2]], mode='constant', value=0.0).transpose(1, 2)
+        return map_last_in_range
 
     def encode_last_map(self, batch_size, anchor_last, model_per_step):
         with torch.no_grad():
