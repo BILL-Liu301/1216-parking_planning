@@ -5,17 +5,18 @@ import time
 import random
 import psutil
 
-from modules.base_path import path_log, path_result, path_anchors_failed
-from modules.base_paras import num_anchor_state, num_samples
-from modules.util_sample_tries import SampleTries
+from api.base.paths import path_log, path_result, path_anchors_failed
+from api.base.paras import num_state, num_thread
+from api.util.sample_tries import SampleTries
 
 if __name__ == '__main__':
-    # 程序运行中不显示报错
+    # 程序运行中不显示报错，没事别手贱注释掉这个
     os.environ["TF_CPP_MIN_LOG_LEVEL"] = '3'
+
     x_list = np.linspace(start=-8.5, stop=-1.5, num=29)
     y_list = np.linspace(start=7.0, stop=12.0, num=21)
     theta_list = np.linspace(start=-math.pi / 3, stop=math.pi / 3, num=13)
-    anchors_failed_list = np.zeros([1, num_anchor_state])
+    anchors_failed_list = np.zeros([1, num_state])
 
     log = open(path_log, 'w')
     log.write(f"START AT {time.asctime(time.localtime())}")
@@ -30,7 +31,7 @@ if __name__ == '__main__':
 
                 # 设置初始化数据
                 init_data = []
-                for sample in range(num_samples):
+                for sample in range(num_thread):
                     init_data.append([x + random.uniform(-1, 1) * 0.01, y + random.uniform(-1, 1) * 0.01,
                                       theta + random.uniform(-1, 1) * 0.01])
 
@@ -49,7 +50,7 @@ if __name__ == '__main__':
                     result = open(path_result, 'w')
                     result.write(f"\nNow: {time.asctime(time.localtime())}")
                     result.write(f"\nProcess:[{process}{process_all}] {schedule * 100:.2f}%")
-                    result.write(f"\nInit_Data: [{x:.2f}, {y:.2f}, {theta:.2f}], Samples: {num_samples}")
+                    result.write(f"\nInit_Data: [{x:.2f}, {y:.2f}, {theta:.2f}], Samples: {num_thread}")
                     result.write(f"\nDuration: {(time.time() - time_s):.2f}s, CPU: {psutil.cpu_percent()}%")
                     result.write(f"\n\t{sample_tries.Title}")
                     result.write(f"\n\tState:[{sample_tries.State}]")
@@ -66,7 +67,7 @@ if __name__ == '__main__':
                         result = open(path_result, 'w')
                         result.write(f"\nNow: {time.asctime(time.localtime())}")
                         result.write(f"\nProcess:[{process}{process_all}] {schedule * 100:.2f}%")
-                        result.write(f"\nInit_Data: [{x:.4f}, {y:.4f}, {theta:.4f}], Samples: {num_samples}")
+                        result.write(f"\nInit_Data: [{x:.4f}, {y:.4f}, {theta:.4f}], Samples: {num_thread}")
                         result.write(f"\n\t{sample_tries.Title} {(time.time() - time_s):.2f}s")
                         result.write(f"\n\tState:[{sample_tries.State}]")
                         result.write(f"\n-------------------------------------------------")
@@ -89,7 +90,7 @@ if __name__ == '__main__':
                 log = open(path_log, 'a+')
                 log.write(f"\n-------------------------------------------------")
                 log.write(f"\n{time.asctime(time.localtime())}")
-                log.write(f"\nInit_Data: [{x:.4f}, {y:.4f}, {theta:.4f}], Samples: {num_samples}")
+                log.write(f"\nInit_Data: [{x:.4f}, {y:.4f}, {theta:.4f}], Samples: {num_thread}")
                 log.write(f"\nResult:")
                 log.write(f"\n\tSuccessOrNot: [{sample_tries.SuccessOrNot}]")
                 log.write(f"\n\tInitOrNot: [{sample_tries.InitOrNot}]")
