@@ -29,7 +29,7 @@ if __name__ == '__main__':
     model_checkpoint = ModelCheckpoint(monitor='loss_train', save_top_k=1, mode='min', verbose=False)
     model_summery = ModelSummary(max_depth=3)
     gradient_accumulation_scheduler = GradientAccumulationScheduler({10: 2})
-    timer = Timer(duration='00:01:00:00', verbose=True)
+    timer = Timer(duration='00:12:00:00', verbose=True)
     trainer = pl.Trainer(log_every_n_steps=1, max_epochs=paras_Parking_Trajectory_Planner['max_epochs'], check_val_every_n_epoch=2,
                          default_root_dir=path_dataset, accelerator='gpu', devices=1,
                          callbacks=[early_stop_callback, model_checkpoint, model_summery, timer, gradient_accumulation_scheduler])
