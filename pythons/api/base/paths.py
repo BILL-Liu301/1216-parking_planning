@@ -1,4 +1,4 @@
-path_base = "D:/WorkingPlaces/outputs/parking_planning/"
+path_base = "D:/working_places/output/1216-parking_planning/"
 
 path_dataset = path_base + "datasets/"
 path_dataset_pkl = path_dataset + "dataset.pkl"
@@ -15,6 +15,6 @@ path_figs_failed = path_figs + "failed/"
 path_log = path_base + "log.txt"
 path_result = path_base + "result.txt"
 
-path_code = 'D:/WorkingPlaces/1216-parking_planning/'
-path_ckpt_best_version = path_code + 'best_version/'
-path_ckpts = path_dataset + 'lightning_logs/'
+path_code = "D:/working_places/1216-parking_planning/"
+path_ckpt_best_version = path_code + "best_version/"
+path_ckpts = path_dataset + "lightning_logs/"

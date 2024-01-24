@@ -4,6 +4,7 @@ function output = call_optim(init_x, init_y, init_theta)
         [~, solution, SNOPT_info, Duration, Euclidean] = evalc('optim_main(init_x, init_y, init_theta);');
     end
     % [solution, SNOPT_info, Duration, Euclidean] = optim_main(init_x, init_y, init_theta);
+    output.parking_anchors = [init_x, init_y, init_theta];
     output.solution = solution;
     output.SNOPT_info = SNOPT_info;
     output.Duration = Duration;

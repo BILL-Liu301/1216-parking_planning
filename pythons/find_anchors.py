@@ -14,7 +14,7 @@ if __name__ == '__main__':
     os.environ["TF_CPP_MIN_LOG_LEVEL"] = '3'
 
     x_list = np.linspace(start=-8.5, stop=-1.5, num=29)
-    y_list = np.linspace(start=7.0, stop=12.0, num=21)
+    y_list = np.linspace(start=10.0, stop=12.0, num=21)
     theta_list = np.linspace(start=-math.pi / 3, stop=math.pi / 3, num=13)
     anchors_failed_list = np.zeros([1, num_state])
 
@@ -50,7 +50,7 @@ if __name__ == '__main__':
                     result = open(path_result, 'w')
                     result.write(f"\nNow: {time.asctime(time.localtime())}")
                     result.write(f"\nProcess:[{process}{process_all}] {schedule * 100:.2f}%")
-                    result.write(f"\nInit_Data: [{x:.2f}, {y:.2f}, {theta:.2f}], Samples: {num_thread}")
+                    result.write(f"\nInit_Data: [{x:.4f}, {y:.4f}, {theta:.4f}], Samples: {num_thread}")
                     result.write(f"\nDuration: {(time.time() - time_s):.2f}s, CPU: {psutil.cpu_percent()}%")
                     result.write(f"\n\t{sample_tries.Title}")
                     result.write(f"\n\tState:[{sample_tries.State}]")
