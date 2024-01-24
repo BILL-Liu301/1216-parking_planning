@@ -144,7 +144,6 @@ def plot_for_results_dynamic(_result, paras):
         circle = Circle((pre[0, stamp], pre[1, stamp]), paras['map_range'], fill=False)
         ax.add_artist(circle)
         plt.plot(pre[0, 0:(stamp + 1)], pre[1, 0:(stamp + 1)], 'k-')
-
         plt.xlim(xlim)
         plt.ylim(ylim)
         plt.legend(loc='lower right')

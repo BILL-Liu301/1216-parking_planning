@@ -21,8 +21,8 @@ if __name__ == '__main__':
     warnings.filterwarnings('ignore', category=UserWarning)
 
     # 找到ckpt
-    # path_version = path_ckpts + 'version_0/checkpoints/'
-    path_version = path_ckpt_best_version + 'version_0/checkpoints/'
+    path_version = path_ckpts + 'version_0/checkpoints/'
+    # path_version = path_ckpt_best_version + 'version_0/checkpoints/'
     ckpt = path_version + os.listdir(path_version)[0]
 
     # 设置训练器
@@ -42,7 +42,7 @@ if __name__ == '__main__':
         plot_for_results_dynamic(test_results, paras_Parking_Trajectory_Planner)
         # 全局分析
         plot_for_results_macro(test_results, paras_Parking_Trajectory_Planner)
-        plt.savefig(path_figs_test + f'macro_{i}.png')
+        plt.savefig(path_figs_test + f'{i}_macro.png')
         # 局部误差分析
         plot_for_results_micro(test_results, paras_Parking_Trajectory_Planner)
-        plt.savefig(path_figs_test + f'micro_{i}.png')
+        plt.savefig(path_figs_test + f'{i}_micro.png')
