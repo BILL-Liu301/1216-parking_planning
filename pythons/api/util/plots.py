@@ -3,8 +3,8 @@ import numpy as np
 import torch
 from matplotlib.patches import Polygon, Circle
 
-from pythons.api.base.paras import paras_base
-from pythons.api.base.paths import path_figs_init
+from api.base.paras import paras_base
+from api.base.paths import path_figs_init
 
 
 def plot_base():

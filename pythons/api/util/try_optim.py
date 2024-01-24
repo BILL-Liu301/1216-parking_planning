@@ -2,11 +2,11 @@ import os
 from threading import Thread
 import numpy as np
 
-from pythons.api.base.paras import num_planning_time_ref, paras_base
+from api.base.paras import num_planning_time_ref, paras_base
 from .exception import InitDataMeaningLess, MatlabTimeOut, MatlabResultFail
 from .call_optim import CallOptim
 from .wait_matlab import WaitMatlab
-from pythons.api.base.paths import path_solutions
+from api.base.paths import path_solutions
 
 
 class TryOptim(Thread):

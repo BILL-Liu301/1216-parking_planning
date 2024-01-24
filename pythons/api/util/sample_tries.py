@@ -1,4 +1,4 @@
-from pythons.api.base.paras import num_thread
+from api.base.paras import num_thread
 from .try_optim import TryOptim
 from .plots import plot_failed_init
 
