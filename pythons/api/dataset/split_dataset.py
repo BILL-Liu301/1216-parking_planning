@@ -1,7 +1,7 @@
 from torch.utils.data import DataLoader, random_split
 
 from .load_dataset import Parking_Trajectory_Planner_Dataset
-from pythons.api.base.paths import path_dataset_pkl
+from api.base.paths import path_dataset_pkl
 
 dataset_base = Parking_Trajectory_Planner_Dataset(path_dataset_pkl=path_dataset_pkl)
 

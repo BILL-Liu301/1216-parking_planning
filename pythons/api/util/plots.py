@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from matplotlib.patches import Polygon, Circle
+from matplotlib.patches import Polygon, Circle, Rectangle
 
 from api.base.paras import paras_base
 from api.base.paths import path_figs_init
@@ -137,6 +137,7 @@ def plot_for_results_dynamic(_result, paras):
         xlim, ylim = plt.xlim(), plt.ylim()
         for step in range(paras['num_step']):
             plt.plot(ref[step, 0], ref[step, 1], colors[step] + '--', label=labels[step])
+            plt.plot(ref[step, 0], ref[step, 1], colors[step] + '.')
 
         # 车辆
         plt.plot(pre[0, stamp], pre[1, stamp], 'ko')

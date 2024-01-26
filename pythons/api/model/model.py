@@ -1,5 +1,3 @@
-import math
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -54,12 +52,16 @@ class Parking_Trajectory_Planner(nn.Module):
                                                         bidirectional=self.lstm_bidirectional, bias=self.bias, batch_first=True)})
             model_per_step.update({'main_norm': nn.LayerNorm(normalized_shape=self.D * self.size_middle, elementwise_affine=False)})
             # 对时序预测核心的输出进行解码，输出max/mean/min和var
-            model_per_step.update({'decode_mean': nn.Sequential(nn.ReLU(), nn.Linear(in_features=self.D * self.size_middle, out_features=self.size_middle, bias=self.bias),
-                                                                nn.ReLU(), nn.Linear(in_features=self.size_middle, out_features=self.len_info_loc, bias=self.bias),
+            model_per_step.update({'decode_mean': nn.Sequential(nn.ReLU(), nn.Linear(in_features=self.D * self.size_middle, out_features=self.len_info_loc, bias=self.bias),
                                                                 nn.Tanh())})
-            model_per_step.update({'decode_var': nn.Sequential(nn.ReLU(), nn.Linear(in_features=self.D * self.size_middle, out_features=self.size_middle, bias=self.bias),
-                                                               nn.ReLU(), nn.Linear(in_features=self.size_middle, out_features=self.len_info_loc, bias=self.bias),
+            model_per_step.update({'decode_var': nn.Sequential(nn.ReLU(), nn.Linear(in_features=self.D * self.size_middle, out_features=self.len_info_loc, bias=self.bias),
                                                                nn.Sigmoid())})
+            # model_per_step.update({'decode_mean': nn.Sequential(nn.ReLU(), nn.Linear(in_features=self.D * self.size_middle, out_features=self.size_middle, bias=self.bias),
+            #                                                     nn.ReLU(), nn.Linear(in_features=self.size_middle, out_features=self.len_info_loc, bias=self.bias),
+            #                                                     nn.Tanh())})
+            # model_per_step.update({'decode_var': nn.Sequential(nn.ReLU(), nn.Linear(in_features=self.D * self.size_middle, out_features=self.size_middle, bias=self.bias),
+            #                                                    nn.ReLU(), nn.Linear(in_features=self.size_middle, out_features=self.len_info_loc, bias=self.bias),
+            #                                                    nn.Sigmoid())})
             self.planners.append(model_per_step)
 
     def cal_map_last(self, batch_size, anchor_last):
@@ -144,16 +146,24 @@ class Parking_Trajectory_Planner_LightningModule(pl.LightningModule):
         self.criterion_val = Criterion_Dis(car_length=4.0, weight=0.5, reduction='max')
         self.criterion_test_dis = Criterion_Dis(car_length=4.0, weight=0.5, reduction='none')
         self.criterion_test_L1 = nn.L1Loss(reduction='none')
+        # self.choose_parameters_train([0])
         self.optimizer = optim.Adam(self.parameters(), paras['lr_init'])
         self.scheduler = lr_scheduler.OneCycleLR(optimizer=self.optimizer, max_lr=paras['lr_init'], total_steps=paras['max_epochs'], pct_start=0.1)
-
         self.test_results = list()
         self.test_losses = {
             'mean': list(),
             'max': list()
         }
 
-    def run_base(self, batch, mode='test'):
+    def choose_parameters_train(self, planner: list):
+        planner = [str(planner[item]) for item in planner]
+        for name, para in self.named_parameters():
+            if name.split('.')[2] in planner:
+                para.requires_grad = True
+            else:
+                para.requires_grad = False
+
+    def run_base(self, batch, batch_idx):
         inp_start_point = batch[:, 0, 0:1]
         pre_mean, pre_var, views = self.model(inp_start_point)
         ref_mean = batch
