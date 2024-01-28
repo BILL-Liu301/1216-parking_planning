@@ -20,9 +20,9 @@ if __name__ == '__main__':
     # 加载pytorch_lighting模型
     model_lighting = Parking_Trajectory_Planner_LightningModule(paras=paras_Parking_Trajectory_Planner)
 
-    清空logs
-    if os.path.exists(path_ckpts):
-        shutil.rmtree(path_ckpts)
+    # 清空logs
+    # if os.path.exists(path_ckpts):
+    #     shutil.rmtree(path_ckpts)
 
     # 设置训练器
     early_stop_callback = EarlyStopping(monitor='loss_val_nll', min_delta=0.001, patience=3, verbose=False, mode='min', check_on_train_epoch_end=False)
@@ -34,4 +34,5 @@ if __name__ == '__main__':
                          default_root_dir=path_dataset, accelerator='gpu', devices=1,
                          callbacks=[early_stop_callback, model_checkpoint, model_summery, timer, gradient_accumulation_scheduler])
     trainer.fit(model=model_lighting, train_dataloaders=paras_Parking_Trajectory_Planner_dataset['dataset_loader_train'],
-                val_dataloaders=paras_Parking_Trajectory_Planner_dataset['dataset_loader_val'])
+                val_dataloaders=paras_Parking_Trajectory_Planner_dataset['dataset_loader_val'],
+                ckpt_path=path_ckpts + 'version_0/checkpoints/epoch=12-step=1899.ckpt')

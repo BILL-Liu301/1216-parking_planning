@@ -147,4 +147,4 @@ paras:
   num_anchor_per_step: 30
   num_layers: 2
   num_step: 4
-  size_middle: 32
+  size_middle: 16

@@ -146,7 +146,7 @@ class Parking_Trajectory_Planner_LightningModule(pl.LightningModule):
         self.criterion_val = Criterion_Dis(car_length=4.0, weight=0.5, reduction='max')
         self.criterion_test_dis = Criterion_Dis(car_length=4.0, weight=0.5, reduction='none')
         self.criterion_test_L1 = nn.L1Loss(reduction='none')
-        # self.choose_parameters_train([0])
+        self.choose_parameters_train([0])
         self.optimizer = optim.Adam(self.parameters(), paras['lr_init'])
         self.scheduler = lr_scheduler.OneCycleLR(optimizer=self.optimizer, max_lr=paras['lr_init'], total_steps=paras['max_epochs'], pct_start=0.1)
         self.test_results = list()

@@ -47,7 +47,7 @@ paras:
     - !!binary |
       AAAAAAAAAAAAAAAAAAD4PxgtRFT7Ifk/
   len_info_loc: 3
-  lr_init: 0.0001
+  lr_init: 0.001
   map: !!python/object/apply:numpy.core.multiarray._reconstruct
     args:
     - *id001
@@ -147,4 +147,4 @@ paras:
   num_anchor_per_step: 30
   num_layers: 2
   num_step: 4
-  size_middle: 32
+  size_middle: 16
