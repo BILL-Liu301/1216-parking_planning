@@ -22,12 +22,12 @@ if __name__ == '__main__':
 
     # 找到ckpt
     path_version = path_ckpts + 'version_0/checkpoints/'
-    # path_version = path_ckpt_best_version + 'version_0/checkpoints/'
+    # path_version = path_ckpt_best_version + 'version_1/checkpoints/'
     ckpt = path_version + os.listdir(path_version)[0]
 
     # 设置训练器
     trainer = pl.Trainer(default_root_dir=path_dataset, accelerator='gpu', devices=1)
-    model_lighting = Parking_Trajectory_Planner_LightningModule.load_from_checkpoint(checkpoint_path=ckpt, paras=paras_Parking_Trajectory_Planner)
+    model_lighting = Parking_Trajectory_Planner_LightningModule.load_from_checkpoint(checkpoint_path=ckpt)
     dataloaders = paras_Parking_Trajectory_Planner_dataset['dataset_loader_test']
     trainer.test(model=model_lighting, dataloaders=dataloaders)
 

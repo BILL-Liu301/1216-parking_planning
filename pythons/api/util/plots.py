@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from matplotlib.patches import Polygon, Circle
+from matplotlib.patches import Polygon, Circle, Rectangle
 
 from api.base.paras import paras_base
 from api.base.paths import path_figs_init
@@ -127,6 +127,7 @@ def plot_for_results_dynamic(_result, paras):
     pre = np.concatenate([_result['pre'][i] for i in range(paras['num_step'])], axis=-1)
     ref = _result['ref']
     view = np.concatenate([_result['view'][i] for i in range(paras['num_step'])], axis=-1)
+    state = np.concatenate([_result['state'][i] for i in range(paras['num_step'])], axis=-1)
     map_np = paras['map']
 
     for stamp in range(pre.shape[-1]):
@@ -137,6 +138,7 @@ def plot_for_results_dynamic(_result, paras):
         xlim, ylim = plt.xlim(), plt.ylim()
         for step in range(paras['num_step']):
             plt.plot(ref[step, 0], ref[step, 1], colors[step] + '--', label=labels[step])
+            plt.plot(ref[step, 0], ref[step, 1], colors[step] + '.')
 
         # 车辆
         plt.plot(pre[0, stamp], pre[1, stamp], 'ko')
@@ -152,6 +154,7 @@ def plot_for_results_dynamic(_result, paras):
         # 基本场景
         plt.plot(view[0, :, stamp], view[1, :, stamp], 'ko')
         plt.arrow(0.0, 0.0, paras['car_length'], 0.0, head_width=0.3, head_length=0.5)
+        plt.arrow(paras['car_length'], 0.0, np.cos(state[0, stamp]), np.sin(state[0, stamp]), head_width=0.3, head_length=0.5)
         circle = Circle((0.0, 0.0), paras['map_range'], fill=False)
         ax.add_artist(circle)
         plt.xlim([-paras['map_range'], paras['map_range']])

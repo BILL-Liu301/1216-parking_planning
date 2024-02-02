@@ -1,7 +1,7 @@
 from torch.utils.data import DataLoader, random_split
 
 from .load_dataset import Parking_Trajectory_Planner_Dataset
-from pythons.api.base.paths import path_dataset_pkl
+from api.base.paths import path_dataset_pkl
 
 dataset_base = Parking_Trajectory_Planner_Dataset(path_dataset_pkl=path_dataset_pkl)
 
@@ -14,9 +14,9 @@ train_set_size = int(len(train_valid_set) * 0.8)
 valid_set_size = len(train_valid_set) - train_set_size
 train_set, valid_set = random_split(train_valid_set, [train_set_size, valid_set_size])
 
-dataset_loader_train = DataLoader(train_set, batch_size=64, shuffle=True, pin_memory=True, num_workers=0)
-dataset_loader_val = DataLoader(valid_set, batch_size=64, pin_memory=True, num_workers=0)
-dataset_loader_test = DataLoader(test_set, batch_size=256, pin_memory=True, num_workers=0)
+dataset_loader_train = DataLoader(train_set, batch_size=16, shuffle=True, pin_memory=True, num_workers=0)
+dataset_loader_val = DataLoader(valid_set, batch_size=16, pin_memory=True, num_workers=0)
+dataset_loader_test = DataLoader(test_set, batch_size=512, pin_memory=True, num_workers=0)
 paras_Parking_Trajectory_Planner_dataset = {
     'dataset_loader_train': dataset_loader_train,
     'dataset_loader_val': dataset_loader_val,
