@@ -1,7 +1,10 @@
+import math
+
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from matplotlib.patches import Polygon, Circle, Rectangle
+import matplotlib.transforms as transforms
 
 from api.base.paras import paras_base
 from api.base.paths import path_figs_init
@@ -120,7 +123,7 @@ def plot_for_results_micro(_result, paras):
     plot_for_results_micro_x_y_theta(5, 2, 'theta', colors, labels, _result, paras)
 
 
-def plot_for_results_dynamic(_result, paras):
+def plot_for_results_dynamic(_result, paras, map_x, map_y, view_type='ogm'):
     colors = ['r', 'g', 'b', 'k']
     labels = ['step_1', 'step_2', 'step_3', 'step_4']
 
@@ -131,6 +134,8 @@ def plot_for_results_dynamic(_result, paras):
     map_np = paras['map']
 
     for stamp in range(pre.shape[-1]):
+        plt.clf()
+
         ax = plt.subplot(1, 2, 1)
         # 基本场景
         # plot_base()
@@ -143,22 +148,24 @@ def plot_for_results_dynamic(_result, paras):
         # 车辆
         plt.plot(pre[0, stamp], pre[1, stamp], 'ko')
         plt.arrow(pre[0, stamp], pre[1, stamp], paras['car_length'] * np.cos(pre[2, stamp]), paras['car_length'] * np.sin(pre[2, stamp]), head_width=0.3, head_length=0.5)
-        circle = Circle((pre[0, stamp], pre[1, stamp]), paras['map_range'], fill=False)
-        ax.add_artist(circle)
+        rect = Rectangle(xy=(pre[0, stamp] - paras['map_width_half'] * paras['map_interval'], pre[1, stamp] - paras['map_height_half'] * paras['map_interval']),
+                         width=2 * paras['map_width_half'] * paras['map_interval'], height=2 * paras['map_height_half'] * paras['map_interval'],
+                         angle=pre[2, stamp] * 180 / math.pi, rotation_point='center', linewidth=1, edgecolor='r', facecolor='none')
+        ax.add_artist(rect)
         plt.plot(pre[0, 0:(stamp + 1)], pre[1, 0:(stamp + 1)], 'k-')
         plt.xlim(xlim)
         plt.ylim(ylim)
         plt.legend(loc='lower right')
 
         ax = plt.subplot(1, 2, 2)
-        # 基本场景
-        plt.plot(view[0, :, stamp], view[1, :, stamp], 'ko')
+        for w in range(view.shape[0]):
+            for h in range(view.shape[1]):
+                if view[w, h, stamp] == 1:
+                    plt.plot(map_x[w], map_y[h], 'ks')
         plt.arrow(0.0, 0.0, paras['car_length'], 0.0, head_width=0.3, head_length=0.5)
-        plt.arrow(paras['car_length'], 0.0, np.cos(state[0, stamp]), np.sin(state[0, stamp]), head_width=0.3, head_length=0.5)
-        circle = Circle((0.0, 0.0), paras['map_range'], fill=False)
-        ax.add_artist(circle)
+        plt.arrow(paras['car_length'], 0.0, np.cos(state[1, stamp]), np.sin(state[1, stamp]), head_width=0.3, head_length=0.5)
         plt.xlim([-paras['map_range'], paras['map_range']])
         plt.ylim([-paras['map_range'], paras['map_range']])
 
-        plt.pause(0.1)
-        plt.clf()
+        plt.pause(1)
+    plt.show()

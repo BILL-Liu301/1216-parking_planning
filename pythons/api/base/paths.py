@@ -17,4 +17,4 @@ path_result = path_base + "result.txt"
 
 path_code = "D:/working_places/1216-parking_planning/"
 path_ckpt_best_version = path_code + "best_version/"
-path_ckpts = path_dataset + "lightning_logs/"
+path_ckpts = path_base + "lightning_logs/"

@@ -8,7 +8,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, ModelSum
 from api.base.paras import paras_Parking_Trajectory_Planner
 from api.dataset.split_dataset import paras_Parking_Trajectory_Planner_dataset
 from api.model.model import Parking_Trajectory_Planner_LightningModule
-from api.base.paths import path_ckpts, path_dataset, path_ckpt_best_version
+from api.base.paths import path_ckpts, path_dataset, path_ckpt_best_version, path_base
 
 if __name__ == '__main__':
     pl.seed_everything(2024)
@@ -31,7 +31,7 @@ if __name__ == '__main__':
     gradient_accumulation_scheduler = GradientAccumulationScheduler({10: 2})
     timer = Timer(duration='00:12:00:00', verbose=True)
     trainer = pl.Trainer(log_every_n_steps=1, max_epochs=paras_Parking_Trajectory_Planner['max_epochs'], check_val_every_n_epoch=1,
-                         default_root_dir=path_dataset, accelerator='gpu', devices=1,
-                         callbacks=[early_stop_callback, model_checkpoint, model_summery, timer, gradient_accumulation_scheduler])
+                         default_root_dir=path_base, accelerator='gpu', devices=1,
+                         callbacks=[model_checkpoint, model_summery, timer, gradient_accumulation_scheduler])
     trainer.fit(model=model_lighting, train_dataloaders=paras_Parking_Trajectory_Planner_dataset['dataset_loader_train'],
                 val_dataloaders=paras_Parking_Trajectory_Planner_dataset['dataset_loader_val'])
