@@ -17,7 +17,7 @@ paras_base = {
     'Freespace_Y': 8.0,
     'Parking_X': 2.5,
     'Parking_Y': 5.5,
-    'Car_Length': 2.0,
+    'Car_Length': 2.9,
     'Car_Width': 1.9,
     'Car_L': 2.5,
     'tf': 240,
@@ -89,23 +89,24 @@ paras_Parking_Trajectory_Planner = {
     'size_middle': 256,
     'map_range': 5,  # 圆形地图的范围半径
     'map_num_max': 250,  # 圆形地图的最大点数
-    'map_width_half': 20,  # 矩形地图的半宽
-    'map_height_half': 20,  # 矩形地图的半高
-    'map_interval': 0.25,  # 矩形地图分辨率
-    'map_in_channels': 3,
+    'map_width_half': 10,  # 矩形地图的半宽
+    'map_height_half': 10,  # 矩形地图的半高
+    'map_interval': 0.5,  # 矩形地图分辨率
+    'map_in_channels': 1,
     'map_out_channels': 1,
-    'map_kernel_size': 5,
+    'map_kernel_size': 4,
     'map_stride': 2,
     'map_padding': 0,
     'map': map_np,
-    'num_layers': 1,
+    'num_layers': 2,
     'device': torch.device('cuda' if torch.cuda.is_available() else 'cpu'),
     'num_anchor_per_step': num_anchor_per_step,
     'num_step': num_step,
     'len_info_loc': 3,
     'len_info_state': 2,
-    'delta_limit_mean': np.array([1, math.pi / 6]),  # s phi
-    'delta_limit_var': 5.0,
+    'delta_limit_mean': np.array([2, math.pi / 6]),  # s phi
+    # 'delta_limit_mean': np.array([0.5, 0.5, math.pi / 12]),  # x y theta
+    'delta_limit_var': 2.0,
     'end_point': np.array([0.0, 1.5, math.pi / 2]),
     'car_length': paras_base['Car_Length']
 }
