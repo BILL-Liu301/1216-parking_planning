@@ -17,7 +17,7 @@ paras_base = {
     'Freespace_Y': 8.0,
     'Parking_X': 2.5,
     'Parking_Y': 5.5,
-    'Car_Length': 2.0,
+    'Car_Length': 2.9,
     'Car_Width': 1.9,
     'Car_L': 2.5,
     'tf': 240,
@@ -30,7 +30,7 @@ paras_base = {
 }
 
 # 地图
-point_split = 0.5
+point_split = 0.15
 #  ————
 x = np.linspace(-paras_base['Freespace_X'], paras_base['Freespace_X'], math.floor(paras_base['Freespace_X'] * 2 / point_split) + 1)
 y = np.ones(x.shape) * (paras_base['Parking_Y'] + paras_base['Freespace_Y'])
@@ -87,8 +87,16 @@ paras_Parking_Trajectory_Planner = {
     'max_epochs': 100,
     'lr_init': 1e-3,
     'size_middle': 64,
-    'map_range': 5,
-    'map_num_max': 50,
+    'map_range': 5,  # 圆形地图的范围半径
+    'map_num_max': 250,  # 圆形地图的最大点数
+    'map_width_half': 10,  # 矩形地图的半宽
+    'map_height_half': 10,  # 矩形地图的半高
+    'map_interval': 0.5,  # 矩形地图分辨率
+    'map_in_channels': 1,
+    'map_out_channels': 1,
+    'map_kernel_size': 4,
+    'map_stride': 2,
+    'map_padding': 0,
     'map': map_np,
     'num_layers': 2,
     'device': torch.device('cuda' if torch.cuda.is_available() else 'cpu'),
@@ -96,8 +104,9 @@ paras_Parking_Trajectory_Planner = {
     'num_step': num_step,
     'len_info_loc': 3,
     'len_info_state': 2,
-    'delta_limit_mean': np.array([0.5, math.pi / 6]),
-    'delta_limit_var': 10.0,
+    # 'delta_limit_mean': np.array([2, math.pi / 6]),  # s phi
+    'delta_limit_mean': np.array([0.5, 0.5, math.pi / 12]),  # x y theta
+    'delta_limit_var': 2.0,
     'end_point': np.array([0.0, 1.5, math.pi / 2]),
     'car_length': paras_base['Car_Length']
 }
