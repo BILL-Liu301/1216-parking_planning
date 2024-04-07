@@ -86,7 +86,7 @@ map_np = np.append(map_np, np.stack([x, y], axis=0), axis=1)
 paras_Parking_Trajectory_Planner = {
     'max_epochs': 100,
     'lr_init': 1e-3,
-    'size_middle': 256,
+    'size_middle': 64,
     'map_range': 5,  # 圆形地图的范围半径
     'map_num_max': 250,  # 圆形地图的最大点数
     'map_width_half': 10,  # 矩形地图的半宽
@@ -104,8 +104,8 @@ paras_Parking_Trajectory_Planner = {
     'num_step': num_step,
     'len_info_loc': 3,
     'len_info_state': 2,
-    'delta_limit_mean': np.array([2, math.pi / 6]),  # s phi
-    # 'delta_limit_mean': np.array([0.5, 0.5, math.pi / 12]),  # x y theta
+    # 'delta_limit_mean': np.array([2, math.pi / 6]),  # s phi
+    'delta_limit_mean': np.array([0.5, 0.5, math.pi / 12]),  # x y theta
     'delta_limit_var': 2.0,
     'end_point': np.array([0.0, 1.5, math.pi / 2]),
     'car_length': paras_base['Car_Length']

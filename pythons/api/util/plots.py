@@ -168,7 +168,7 @@ def plot_for_results_micro(_result, paras):
 #         plt.ylim([-paras['map_range'], paras['map_range']])
 #
 #         plt.pause(0.01)
-def plot_for_results_dynamic(_result, paras):
+def plot_for_results_dynamic(_result, map_x, map_y, paras):
     colors = ['r', 'g', 'b', 'k']
     labels = ['step_1', 'step_2', 'step_3', 'step_4']
 
@@ -200,11 +200,15 @@ def plot_for_results_dynamic(_result, paras):
 
         ax = plt.subplot(1, 2, 2)
         # 基本场景
-        plt.plot(view[0, :, stamp], view[1, :, stamp], 'ko')
+        # plt.plot(view[0, :, stamp], view[1, :, stamp], 'ko')
+        for w in range(view.shape[0]):
+            for h in range(view.shape[1]):
+                if view[w, h, stamp] == 1:
+                    plt.plot(map_x[w], map_y[h], 'ks')
         plt.arrow(0.0, 0.0, paras['car_length'], 0.0, head_width=0.3, head_length=0.5)
-        plt.arrow(paras['car_length'], 0.0, np.cos(state[1, stamp]), np.sin(state[1, stamp]), head_width=0.3, head_length=0.5)
-        circle = Circle((0.0, 0.0), paras['map_range'], fill=False)
-        ax.add_artist(circle)
+        # plt.arrow(paras['car_length'], 0.0, np.cos(state[1, stamp]), np.sin(state[1, stamp]), head_width=0.3, head_length=0.5)
+        # circle = Circle((0.0, 0.0), paras['map_range'], fill=False)
+        # ax.add_artist(circle)
         plt.xlim([-paras['map_range'], paras['map_range']])
         plt.ylim([-paras['map_range'], paras['map_range']])
 

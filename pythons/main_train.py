@@ -28,10 +28,10 @@ if __name__ == '__main__':
         # if step < (num_step - 1):
         #     continue
         # 加载pytorch_lighting模型
-        model_lighting = Parking_Trajectory_Planner_LightningModule(paras=paras_Parking_Trajectory_Planner, train_step=list(range(0, step + 1)))
+        model_lighting = Parking_Trajectory_Planner_LightningModule(paras=paras_Parking_Trajectory_Planner, train_step=[step])  # list(range(0, step + 1))
 
         # 设置训练器
-        early_stop_callback = EarlyStopping(monitor='loss_val_nll', min_delta=0.001, patience=5, verbose=False, mode='min',
+        early_stop_callback = EarlyStopping(monitor='loss_val_nll', min_delta=0.01, patience=3, verbose=False, mode='min',
                                             check_on_train_epoch_end=True, check_finite=True, stopping_threshold=-1)
         model_checkpoint = ModelCheckpoint(monitor='loss_train', save_top_k=1, mode='min', verbose=False)
         model_summery = ModelSummary(max_depth=1)
@@ -49,4 +49,4 @@ if __name__ == '__main__':
             ckpt_path = None
         trainer.fit(model=model_lighting, train_dataloaders=paras_Parking_Trajectory_Planner_dataset['dataset_loader_train'],
                     val_dataloaders=paras_Parking_Trajectory_Planner_dataset['dataset_loader_val'],
-                    ckpt_path=None)
+                    ckpt_path=ckpt_path)

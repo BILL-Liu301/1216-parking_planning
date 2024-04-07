@@ -23,8 +23,8 @@ if __name__ == '__main__':
     warnings.filterwarnings('ignore', category=UserWarning)
 
     # 找到ckpt
-    path_version = path_ckpts + 'version_3/checkpoints/'
-    # path_version = path_ckpt_best_version + 'version_1/checkpoints/'
+    # path_version = path_ckpts + 'version_3/checkpoints/'
+    path_version = path_ckpt_best_version + 'version_3/checkpoints/'
     ckpt = path_version + os.listdir(path_version)[0]
 
     # 设置训练器
@@ -42,7 +42,7 @@ if __name__ == '__main__':
         test_results = model_lighting.test_results[i]
         # 动态分析
         # plot_for_results_dynamic(test_results, paras_Parking_Trajectory_Planner, model_lighting.model.map_x.cpu().numpy(), model_lighting.model.map_y.cpu().numpy())
-        plot_for_results_dynamic(test_results, paras_Parking_Trajectory_Planner)
+        plot_for_results_dynamic(test_results, model_lighting.model.map_x.cpu().numpy(), model_lighting.model.map_y.cpu().numpy(), paras_Parking_Trajectory_Planner)
         # 全局分析
         plot_for_results_macro(test_results, paras_Parking_Trajectory_Planner)
         plt.savefig(path_figs_test + f'{i}_macro.png')
